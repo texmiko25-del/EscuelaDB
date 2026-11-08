@@ -1,0 +1,227 @@
+{% with cargo=request.user.empleado.cargo url_name=request.resolver_match.url_name %}
+<aside class="no-print" id="sidebar" aria-label="Menú de administración">
+    <div class="sidebar-brand">
+        <div class="sidebar-brand__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 10.5 12 3l9 7.5"></path>
+                <path d="M5.5 9.5V21h13V9.5"></path>
+                <path d="M9 21v-6h6v6"></path>
+            </svg>
+        </div>
+        <h1>E.B. Elba Rosa<br>de Acevedo</h1>
+        <p>Municipio Obispos</p>
+    </div>
+
+    <nav class="sidebar-nav" aria-label="Secciones del panel">
+        {% if cargo == 'DOCENTE' or cargo == 'PROFESOR' %}
+            <section class="sidebar-section" aria-labelledby="sidebar-section-teaching">
+                <h2 class="sidebar-section__title" id="sidebar-section-teaching">Docencia</h2>
+                <ul>
+                    <li>
+                        <a href="{% url 'docente_mis_estudiantes' %}" class="sidebar-item sidebar-link {% if url_name == 'docente_mis_estudiantes' %}sidebar-active{% endif %}">
+                            <svg class="icon-sidebar" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="M16 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2"></path><circle cx="9.5" cy="7" r="3"></circle><path d="M17 8h4M19 6v4"></path>
+                            </svg>
+                            <span>Mis estudiantes</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{% url 'admin_registro_academico' %}" class="sidebar-item sidebar-link {% if url_name == 'admin_registro_academico' or url_name == 'admin_crear_registro_academico' or url_name == 'admin_editar_registro_academico' %}sidebar-active{% endif %}">
+                            <svg class="icon-sidebar" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H18M6.5 21H20V7H6.5A2.5 2.5 0 0 0 4 9.5v9A2.5 2.5 0 0 0 6.5 21Z"></path><path d="M8 9h8M8 13h5"></path>
+                            </svg>
+                            <span>Calificaciones</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{% url 'admin_asistencias' %}" class="sidebar-item sidebar-link {% if url_name == 'admin_asistencias' or url_name == 'admin_crear_asistencia' %}sidebar-active{% endif %}">
+                            <svg class="icon-sidebar" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="M8 3h8l4 4v14H4V3h4Z"></path><path d="M8 12h8M8 16h5M14 3v5h6"></path>
+                            </svg>
+                            <span>Asistencia</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{% url 'admin_resumenes_asistencia_lapso' %}" class="sidebar-item sidebar-link {% if url_name == 'admin_resumenes_asistencia_lapso' or url_name == 'admin_crear_resumen_asistencia_lapso' or url_name == 'admin_editar_resumen_asistencia_lapso' %}sidebar-active{% endif %}">
+                            <svg class="icon-sidebar" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="M4 19V5M4 19h17"></path><path d="m7 15 4-4 3 2 5-6"></path>
+                            </svg>
+                            <span>Resumen de asistencia</span>
+                        </a>
+                    </li>
+                </ul>
+            </section>
+        {% else %}
+            <section class="sidebar-section" aria-labelledby="sidebar-section-home">
+                <h2 class="sidebar-section__title" id="sidebar-section-home">Panel</h2>
+                <ul>
+                    <li>
+                        <a href="{% url 'admin_panel' %}" class="sidebar-item sidebar-link {% if url_name == 'admin_panel' or url_name == 'admin_modificar_dashboard' or url_name == 'admin_modificar_sobre_nosotros' %}sidebar-active{% endif %}">
+                            <svg class="icon-sidebar" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="M4 19V10M12 19V5M20 19v-7"></path>
+                            </svg>
+                            <span>Dashboard</span>
+                        </a>
+                    </li>
+                    {% if cargo == 'DIRECTORA' or cargo == 'SUBDIRECTORA' %}
+                    <li>
+                        <a href="{% url 'historial_reportes_sistema' %}" class="sidebar-item sidebar-link {% if url_name == 'historial_reportes_sistema' or url_name == 'generar_reporte_sistema_ahora' or url_name == 'descargar_reporte_sistema' %}sidebar-active{% endif %}">
+                            <svg class="icon-sidebar" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="M5 3h14v18H5zM8 7h8M8 11h8M8 15h5"></path>
+                            </svg>
+                            <span>Reportes del sistema</span>
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </section>
+
+            <section class="sidebar-section" aria-labelledby="sidebar-section-academic">
+                <h2 class="sidebar-section__title" id="sidebar-section-academic">Gestión académica</h2>
+                <ul>
+                    <li>
+                        <a href="{% url 'admin_estudiantes' %}" class="sidebar-item sidebar-link {% if url_name == 'admin_estudiantes' or url_name == 'admin_crear_estudiante' or url_name == 'admin_exportar_estudiantes_pdf' or url_name == 'admin_expediente_estudiante' or url_name == 'admin_editar_estudiante' or url_name == 'admin_eliminar_estudiante' or url_name == 'admin_expediente_estudiante_por_id' or url_name == 'admin_editar_estudiante_por_id' or url_name == 'admin_eliminar_estudiante_por_id' %}sidebar-active{% endif %}">
+                            <svg class="icon-sidebar" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="M16 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2"></path><circle cx="9.5" cy="7" r="3"></circle><path d="m20 8 2 2-4 4-2-2z"></path>
+                            </svg>
+                            <span>Estudiantes</span>
+                        </a>
+                    </li>
+                    {% if cargo == 'DIRECTORA' or cargo == 'SUBDIRECTORA' or cargo == 'COORD' %}
+                    <li>
+                        <a href="{% url 'admin_docentes' %}" class="sidebar-item sidebar-link {% if url_name == 'admin_docentes' or url_name == 'admin_crear_docente' or url_name == 'admin_expediente_docente' or url_name == 'admin_docente_estudiantes' or url_name == 'admin_asignar_estudiantes_docente' or url_name == 'admin_editar_docente' or url_name == 'admin_eliminar_docente' or url_name == 'admin_expediente_docente_por_id' or url_name == 'admin_docente_estudiantes_por_id' or url_name == 'admin_asignar_estudiantes_docente_por_id' or url_name == 'admin_editar_docente_por_id' or url_name == 'admin_eliminar_docente_por_id' %}sidebar-active{% endif %}">
+                            <svg class="icon-sidebar" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="M4 20v-1a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v1"></path><circle cx="8" cy="7" r="3"></circle><path d="M16 8h4M18 6v4"></path>
+                            </svg>
+                            <span>Docentes</span>
+                        </a>
+                    </li>
+                    {% endif %}
+                    {% if cargo == 'DIRECTORA' or cargo == 'SUBDIRECTORA' %}
+                    <li>
+                        <a href="{% url 'admin_representantes' %}" class="sidebar-item sidebar-link {% if url_name == 'admin_representantes' or url_name == 'admin_crear_representante' or url_name == 'admin_expediente_representante' or url_name == 'admin_editar_representante' or url_name == 'admin_eliminar_representante' or url_name == 'admin_expediente_representante_por_id' or url_name == 'admin_editar_representante_por_id' or url_name == 'admin_eliminar_representante_por_id' %}sidebar-active{% endif %}">
+                            <svg class="icon-sidebar" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="M20 21v-2a4 4 0 0 0-4-4h-4a4 4 0 0 0-4 4v2"></path><circle cx="10" cy="7" r="3"></circle><path d="M18 8h3M19.5 6.5v3"></path>
+                            </svg>
+                            <span>Representantes</span>
+                        </a>
+                    </li>
+                    {% endif %}
+                    <li>
+                        <a href="{% url 'admin_registro_academico' %}" class="sidebar-item sidebar-link {% if url_name == 'admin_registro_academico' or url_name == 'admin_crear_registro_academico' or url_name == 'admin_editar_registro_academico' %}sidebar-active{% endif %}">
+                            <svg class="icon-sidebar" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H18M6.5 21H20V7H6.5A2.5 2.5 0 0 0 4 9.5v9A2.5 2.5 0 0 0 6.5 21Z"></path><path d="M8 9h8M8 13h5"></path>
+                            </svg>
+                            <span>Calificaciones</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{% url 'admin_asistencias' %}" class="sidebar-item sidebar-link {% if url_name == 'admin_asistencias' or url_name == 'admin_crear_asistencia' %}sidebar-active{% endif %}">
+                            <svg class="icon-sidebar" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="M8 3h8l4 4v14H4V3h4Z"></path><path d="M8 12h8M8 16h5M14 3v5h6"></path>
+                            </svg>
+                            <span>Asistencia</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{% url 'admin_resumenes_asistencia_lapso' %}" class="sidebar-item sidebar-link {% if url_name == 'admin_resumenes_asistencia_lapso' or url_name == 'admin_crear_resumen_asistencia_lapso' or url_name == 'admin_editar_resumen_asistencia_lapso' %}sidebar-active{% endif %}">
+                            <svg class="icon-sidebar" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="M4 19V5M4 19h17"></path><path d="m7 15 4-4 3 2 5-6"></path>
+                            </svg>
+                            <span>Resumen de asistencia</span>
+                        </a>
+                    </li>
+                    {% if cargo != 'COORD' and cargo != 'ASISTENTE' %}
+                    <li>
+                        <a href="{% url 'gestionar_horarios' %}" class="sidebar-item sidebar-link {% if url_name == 'gestionar_horarios' or url_name == 'crear_horario' or url_name == 'editar_horario' or url_name == 'eliminar_horario' or url_name == 'exportar_horarios_pdf' %}sidebar-active{% endif %}">
+                            <svg class="icon-sidebar" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <rect x="3" y="4" width="18" height="17" rx="2"></rect><path d="M8 2v4M16 2v4M3 9h18M8 13h2M14 13h2M8 17h2M14 17h2"></path>
+                            </svg>
+                            <span>Horarios</span>
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </section>
+
+            {% if cargo == 'DIRECTORA' or cargo == 'SUBDIRECTORA' %}
+            <section class="sidebar-section" aria-labelledby="sidebar-section-admin">
+                <h2 class="sidebar-section__title" id="sidebar-section-admin">Administración</h2>
+                <ul>
+                    <li>
+                        <a href="{% url 'subdireccion_asistencia_personal' %}" class="sidebar-item sidebar-link {% if url_name == 'subdireccion_asistencia_personal' or url_name == 'subdireccion_registrar_asistencia' or url_name == 'subdireccion_reporte_asistencia' %}sidebar-active{% endif %}">
+                            <svg class="icon-sidebar" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <circle cx="12" cy="8" r="4"></circle><path d="M4 21v-2a8 8 0 0 1 16 0v2M12 12v4M10 14h4"></path>
+                            </svg>
+                            <span>Asistencia del personal</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{% url 'admin_personal' %}" class="sidebar-item sidebar-link {% if url_name == 'admin_personal' or url_name == 'admin_crear_empleado' or url_name == 'admin_editar_empleado' or url_name == 'admin_eliminar_empleado' %}sidebar-active{% endif %}">
+                            <svg class="icon-sidebar" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="M16 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2"></path><circle cx="9.5" cy="7" r="3"></circle><path d="M17 11h4M19 9v4"></path>
+                            </svg>
+                            <span>Gestión de personal</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{% url 'admin_cuentas' %}" class="sidebar-item sidebar-link {% if url_name == 'admin_cuentas' or url_name == 'admin_crear_usuario' or url_name == 'admin_editar_usuario' or url_name == 'admin_eliminar_usuario' or url_name == 'admin_toggle_usuario' %}sidebar-active{% endif %}">
+                            <svg class="icon-sidebar" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <rect x="3" y="5" width="18" height="14" rx="2"></rect><path d="M3 10h18M7 15h3"></path>
+                            </svg>
+                            <span>Cuentas y permisos</span>
+                        </a>
+                    </li>
+                </ul>
+            </section>
+            {% endif %}
+
+            {% if cargo == 'DIRECTORA' %}
+            <section class="sidebar-section" aria-labelledby="sidebar-section-settings">
+                <h2 class="sidebar-section__title" id="sidebar-section-settings">Configuración</h2>
+                <ul>
+                    <li>
+                        <a href="{% url 'admin_modificar_dashboard' %}" class="sidebar-item sidebar-link {% if url_name == 'admin_modificar_dashboard' %}sidebar-active{% endif %}">
+                            <svg class="icon-sidebar" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <circle cx="12" cy="12" r="3"></circle><path d="m19.4 15 .1.1 1.4 1.1-1.4 2.4-1.7-.6a8 8 0 0 1-1.5.9l-.3 1.8h-2.8l-.3-1.8a8 8 0 0 1-1.5-.9l-1.7.6-1.4-2.4 1.4-1.1a7 7 0 0 1 0-1.8l-1.4-1.1 1.4-2.4 1.7.6a8 8 0 0 1 1.5-.9l.3-1.8h2.8l.3 1.8a8 8 0 0 1 1.5.9l1.7-.6 1.4 2.4-1.4 1.1a7 7 0 0 1 0 1.8Z"></path>
+                            </svg>
+                            <span>Panel institucional</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{% url 'admin_modificar_sobre_nosotros' %}" class="sidebar-item sidebar-link {% if url_name == 'admin_modificar_sobre_nosotros' %}sidebar-active{% endif %}">
+                            <svg class="icon-sidebar" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="M12 20h9"></path><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4Z"></path>
+                            </svg>
+                            <span>Información institucional</span>
+                        </a>
+                    </li>
+                </ul>
+            </section>
+            {% endif %}
+        {% endif %}
+
+        <section class="sidebar-section sidebar-section--account" aria-labelledby="sidebar-section-account">
+            <h2 class="sidebar-section__title" id="sidebar-section-account">Cuenta</h2>
+            <ul>
+                <li>
+                    <a href="{% url 'mi_cuenta' %}" class="sidebar-item sidebar-link {% if url_name == 'mi_cuenta' or url_name == 'mi_cuenta_editar' %}sidebar-active{% endif %}">
+                        <svg class="icon-sidebar" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <circle cx="12" cy="8" r="4"></circle><path d="M4 21v-2a8 8 0 0 1 16 0v2"></path>
+                        </svg>
+                        <span>Mi cuenta</span>
+                    </a>
+                </li>
+            </ul>
+        </section>
+    </nav>
+
+    <div class="sidebar-profile">
+        <div class="sidebar-profile__avatar" aria-hidden="true">{% if request.user.first_name %}{{ request.user.first_name|slice:":1" }}{% else %}U{% endif %}{% if request.user.last_name %}{{ request.user.last_name|slice:":1" }}{% endif %}</div>
+        <div class="sidebar-profile__details">
+            <p class="sidebar-profile__name">{{ request.user.get_full_name|default:request.user.username }}</p>
+            <p class="sidebar-profile__role">{% if request.user.empleado %}{{ request.user.empleado.get_cargo_display }}{% elif request.user.is_staff %}Administrador/a{% else %}Usuario{% endif %}</p>
+        </div>
+    </div>
+</aside>
+{% endwith %}

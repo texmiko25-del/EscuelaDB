@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}E.B. Elba Rosa de Acevedo{% endblock %}</title>
+    <link rel="stylesheet" href="{% static 'css/base.css' %}">
+    <link rel="stylesheet" href="{% static 'css/template_admin.css' %}?v=2">
+    <link rel="stylesheet" href="{% static 'css/admin.css' %}?v=30">
+    <link rel="stylesheet" href="{% static 'css/offline.css' %}">
+    <link rel="icon" type="image/x-icon" href="{% static 'img/Logo_Escuela.ico' %}">
+    {% block extra_css %}{% endblock %}
+</head>
+<body id="top" class="bg-gray-50 {% block body_class %}{% endblock %}">
+<header class="site-header">
+    <nav class="site-nav" aria-label="Navegación principal">
+        <a href="{% if request.user.empleado.cargo == 'DOCENTE' or request.user.empleado.cargo == 'PROFESOR' %}{% url 'docente_mis_estudiantes' %}{% else %}{% url 'home' %}{% endif %}" class="site-brand">
+            <img src="{% static 'img/Logo_Escuela.png' %}" alt="" />
+            <span>E.B. Elba Rosa de Acevedo</span>
+        </a>
+
+        {% if user.is_authenticated and user.is_staff and not request.GET.blocked %}
+            <div class="site-nav__menus">
+                {% if request.user.empleado.cargo == 'DOCENTE' or request.user.empleado.cargo == 'PROFESOR' %}
+                    <details class="nav-dropdown">
+                        <summary>Docencia <span class="nav-chevron" aria-hidden="true"></span></summary>
+                        <div class="nav-dropdown__panel">
+                            <a href="{% url 'docente_mis_estudiantes' %}">Mis estudiantes</a>
+                            <a href="{% url 'gestionar_horarios' %}">Horarios</a>
+                            <a href="{% url 'admin_registro_academico' %}">Notas</a>
+                            <a href="{% url 'admin_asistencias' %}">Asistencia</a>
+                        </div>
+                    </details>
+                {% else %}
+                    <a class="site-nav__link" href="{% url 'admin_panel' %}">Panel</a>
+                    <details class="nav-dropdown">
+                        <summary>Académico <span class="nav-chevron" aria-hidden="true"></span></summary>
+                        <div class="nav-dropdown__panel">
+                            <a href="{% url 'admin_estudiantes' %}">Estudiantes</a>
+                            {% if request.user.empleado.cargo == 'DIRECTORA' or request.user.empleado.cargo == 'SUBDIRECTORA' %}
+                                <a href="{% url 'admin_representantes' %}">Representantes</a>
+                            {% endif %}
+                            {% if request.user.empleado.cargo == 'DIRECTORA' or request.user.empleado.cargo == 'SUBDIRECTORA' or request.user.empleado.cargo == 'COORD' %}
+                                <a href="{% url 'admin_docentes' %}">Docentes</a>
+                            {% endif %}
+                            {% if request.user.empleado.cargo == 'DIRECTORA' or request.user.empleado.cargo == 'SUBDIRECTORA' %}
+                                <a href="{% url 'subdireccion_solicitudes_matricula' %}">Matrículas</a>
+                            {% endif %}
+                            {% if request.user.empleado.cargo == 'COORD' or request.user.empleado.cargo == 'ASISTENTE' %}
+                                <a href="{% url 'admin_registro_academico' %}">Calificaciones</a>
+                                <a href="{% url 'admin_asistencias' %}">Asistencia</a>
+                                <a href="{% url 'admin_resumenes_asistencia_lapso' %}">Asistencia por lapso</a>
+                            {% endif %}
+                        </div>
+                    </details>
+                    {% if request.user.empleado.cargo == 'DIRECTORA' or request.user.empleado.cargo == 'SUBDIRECTORA' %}
+                        <a class="site-nav__link" href="{% url 'admin_cuentas' %}">Cuentas</a>
+                    {% endif %}
+                {% endif %}
+
+                {% if request.user.empleado.cargo == 'DIRECTORA' or request.user.empleado.cargo == 'SUBDIRECTORA' %}
+                    <details class="nav-dropdown">
+                        <summary>Personal y cuenta <span class="nav-chevron" aria-hidden="true"></span></summary>
+                        <div class="nav-dropdown__panel">
+                            <a href="{% url 'subdireccion_asistencia_personal' %}">Asistencia del personal</a>
+                            <a href="{% url 'mi_cuenta' %}">Mi cuenta</a>
+                            <a href="{% url 'admin_personal' %}">Gestión de personal</a>
+                        </div>
+                    </details>
+                {% else %}
+                    <details class="nav-dropdown">
+                        <summary>Cuenta <span class="nav-chevron" aria-hidden="true"></span></summary>
+                        <div class="nav-dropdown__panel">
+                            <a href="{% url 'mi_cuenta' %}">Mi cuenta</a>
+                        </div>
+                    </details>
+                {% endif %}
+            </div>
+        {% endif %}
+
+        <div class="site-nav__actions">
+            {% if user.is_authenticated and not request.GET.blocked %}
+                <a href="{% url 'logout' %}" class="site-logout">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                        <path d="m16 17 5-5-5-5"></path>
+                        <path d="M21 12H9"></path>
+                    </svg>
+                    <span>Cerrar sesión</span>
+                </a>
+            {% elif request.resolver_match.url_name == 'login' %}
+                <a href="{% url 'portal_home' %}" class="site-nav__link">Volver al portal</a>
+            {% else %}
+                <a href="{% url 'login' %}" class="site-nav__link">Iniciar sesión</a>
+            {% endif %}
+        </div>
+    </nav>
+</header>
+<div class="{% if user.is_authenticated and user.is_staff and not request.GET.blocked %}staff-layout flex min-h-screen{% endif %}">
+    {% if user.is_authenticated and user.is_staff and not request.GET.blocked %}
+        {% include 'escuelaApp/includes/sidebar_admin.html' %}
+    {% endif %}
+    <main class="{% if user.is_authenticated and user.is_staff and not request.GET.blocked %}flex-1 p-6 bg-gray-50{% else %}{% block main_class %}page-main{% endblock %}{% endif %}">
+        <div class="card">
+            {% if messages and request.resolver_match.url_name != 'login' %}
+                <div class="message-list">
+                    {% for message in messages %}
+                        <div class="message-box{% if message.tags %} {{ message.tags }}{% endif %}">{{ message }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            {% block content %}{% endblock %}
+        </div>
+    </main>
+</div>
+{% if user.is_authenticated and user.is_staff %}
+    <div
+        class="session-timeout-backdrop"
+        id="session-timeout-modal"
+        aria-hidden="true"
+        data-idle-timeout="{{ request.staff_session_idle_timeout|default:120 }}"
+        data-warning-seconds="{{ request.staff_session_warning_seconds|default:30 }}"
+        data-keepalive-url="{% url 'refresh_staff_session' %}"
+        data-portal-url="{% url 'portal_home' %}"
+        data-logout-url="{% url 'logout' %}"
+    >
+        <section class="session-timeout-card" role="alertdialog" aria-modal="true" aria-labelledby="session-timeout-title" aria-describedby="session-timeout-copy">
+            <div class="session-timeout-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="13" r="8"></circle>
+                    <path d="M12 9v4l2.5 1.5"></path>
+                    <path d="M9 2h6"></path>
+                    <path d="M12 2v3"></path>
+                </svg>
+            </div>
+            <p class="session-timeout-eyebrow">Tu seguridad es importante</p>
+            <h2 id="session-timeout-title">¿Deseas continuar?</h2>
+            <p id="session-timeout-copy" class="session-timeout-copy">Tu sesión se cerrará por inactividad en:</p>
+            <p class="session-timeout-countdown" aria-live="assertive"><span id="session-timeout-seconds">30</span><span>segundos</span></p>
+            <p class="session-timeout-error" id="session-timeout-error" role="alert" hidden></p>
+            <button type="button" class="button primary-button session-timeout-button" id="session-continue-button">Continuar en la sesión</button>
+            <p class="session-timeout-footnote">Si no respondes, volverás al portal web automáticamente.</p>
+            <form hidden aria-hidden="true">{% csrf_token %}</form>
+        </section>
+    </div>
+{% endif %}
+<script>
+    (function () {
+        function initializeNavigationDropdowns() {
+            const dropdowns = Array.from(document.querySelectorAll('.nav-dropdown'));
+            dropdowns.forEach(function (dropdown) {
+                dropdown.addEventListener('toggle', function () {
+                    if (!dropdown.open) return;
+                    dropdowns.forEach(function (otherDropdown) {
+                        if (otherDropdown !== dropdown) otherDropdown.open = false;
+                    });
+                });
+            });
+
+            document.addEventListener('pointerdown', function (event) {
+                if (event.target instanceof Element && event.target.closest('.nav-dropdown')) return;
+                dropdowns.forEach(function (dropdown) {
+                    dropdown.open = false;
+                });
+            });
+
+            document.addEventListener('keydown', function (event) {
+                if (event.key !== 'Escape') return;
+                const openDropdown = dropdowns.find(function (dropdown) { return dropdown.open; });
+                if (!openDropdown) return;
+                openDropdown.open = false;
+                openDropdown.querySelector('summary').focus();
+            });
+        }
+
+        function protectAdminTab() {
+            {% if user.is_authenticated and user.is_staff and not request.GET.blocked %}
+                if (!window.location.pathname.startsWith('/admin-panel') && !window.location.pathname.startsWith('/admin/')) return;
+
+                const storageKey = 'escuela_admin_active_tab_{{ request.user.pk }}';
+                const tabId = sessionStorage.getItem('escuela_admin_tab_id') || (window.crypto && crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random());
+                const currentUrl = window.location.pathname + window.location.search;
+                const activeTab = localStorage.getItem(storageKey);
+                const activeParts = activeTab ? activeTab.split('|') : [];
+                const activeAt = Number(activeParts[1] || 0);
+
+                if (activeParts[0] && activeParts[0] !== tabId && Date.now() - activeAt < 15000) {
+                    sessionStorage.setItem('escuela_admin_blocked_tab', 'true');
+                    window.location.replace('{% url "login" %}?blocked=1');
+                    return;
+                }
+
+                sessionStorage.setItem('escuela_admin_tab_id', tabId);
+                localStorage.setItem(storageKey, tabId + '|' + Date.now());
+                window.addEventListener('beforeunload', function () {
+                    if ((localStorage.getItem(storageKey) || '').split('|')[0] === tabId) {
+                        localStorage.removeItem(storageKey);
+                    }
+                });
+                window.setInterval(function () {
+                    if ((localStorage.getItem(storageKey) || '').split('|')[0] === tabId) {
+                        localStorage.setItem(storageKey, tabId + '|' + Date.now());
+                    }
+                }, 5000);
+            {% endif %}
+        }
+
+        function normalizeTextValue(value) {
+            return String(value ?? '').replace(/\s+/g, ' ').trim();
+        }
+
+        function normalizeFieldValue(field) {
+            if (!field || field.disabled || field.type === 'hidden' || field.type === 'checkbox' || field.type === 'radio' || field.type === 'number' || field.type === 'date' || field.type === 'time' || field.type === 'password') {
+                return;
+            }
+
+            const value = field.value;
+            const cleanValue = normalizeTextValue(value);
+
+            if (field.type === 'email' || field.name && field.name.toLowerCase().includes('email')) {
+                field.value = cleanValue.toLowerCase();
+                return;
+            }
+
+            if (field.value !== cleanValue) {
+                field.value = cleanValue;
+            }
+        }
+
+        function attachNormalization(field) {
+            if (!field || field.dataset.normalized === 'true') return;
+
+            field.dataset.normalized = 'true';
+            field.addEventListener('blur', function () {
+                normalizeFieldValue(field);
+            });
+            field.addEventListener('change', function () {
+                normalizeFieldValue(field);
+            });
+            field.addEventListener('input', function () {
+                const isEmailField = field.type === 'email' || (field.name && field.name.toLowerCase().includes('email'));
+                if (isEmailField) {
+                    field.value = normalizeTextValue(field.value).toLowerCase();
+                    return;
+                }
+                field.value = normalizeTextValue(field.value);
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            initializeNavigationDropdowns();
+            protectAdminTab();
+            document.querySelectorAll('input, textarea, select').forEach(function (field) {
+                attachNormalization(field);
+                normalizeFieldValue(field);
+            });
+                function protectModalBackgroundScroll() {
+                    const modalSelectors = [
+                        '#modal-container:not(.hidden)',
+                        '.field-modal-backdrop.is-open',
+                        '.student-record-modal.is-open',
+                        '[role="dialog"][aria-modal="true"][aria-hidden="false"]',
+                    ];
+
+                    function updateScrollLock() {
+                        document.body.classList.toggle(
+                            'modal-open',
+                            Boolean(document.querySelector(modalSelectors.join(', ')))
+                        );
+                    }
+
+                    updateScrollLock();
+                    const observer = new MutationObserver(updateScrollLock);
+                    observer.observe(document.body, {
+                        attributes: true,
+                        attributeFilter: ['class', 'aria-hidden'],
+                        subtree: true,
+                    });
+                }
+                protectModalBackgroundScroll();
+        });
+    })();
+</script>
+<script src="{% static 'js/session_timeout.js' %}?v=5"></script>
+    {% block extra_js %}{% endblock %}
+</html>

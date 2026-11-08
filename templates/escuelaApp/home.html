@@ -1,0 +1,16 @@
+{% extends 'escuelaApp/base.html' %}
+
+{% block title %}Bienvenido | Escuela{% endblock %}
+
+{% block content %}
+    <h1>Bienvenido a la plataforma escolar</h1>
+    <p>Utiliza tu cuenta para iniciar sesión. Sólo los administradores pueden registrar y modificar cuentas desde el panel administrativo.</p>
+    {% if user.is_authenticated %}
+        <p>Has iniciado sesión como <strong>{{ user.username }}</strong>.</p>
+        {% if user.is_staff %}
+            <a class="button" href="{% url 'admin_panel' %}">Ir al panel de administración</a>
+        {% endif %}
+    {% else %}
+        <a class="button" href="{% url 'login' %}">Iniciar sesión</a>
+    {% endif %}
+{% endblock %}

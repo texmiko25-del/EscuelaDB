@@ -1,0 +1,123 @@
+{% extends 'escuelaApp/base.html' %}
+{% load static %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/admin.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="attendance-page">
+    <section class="attendance-hero">
+        <div>
+            <p class="attendance-eyebrow">Panel administrativo</p>
+            <h1>Gestión de Asistencias</h1>
+            <p>Revisa y filtra los registros de asistencia del alumnado con una vista más clara y visual.</p>
+        </div>
+        {% if request.user.empleado.cargo != 'ASISTENTE' %}
+            <a href="{% url 'admin_crear_asistencia' %}" class="button button--success attendance-cta">Registrar asistencia</a>
+        {% endif %}
+    </section>
+
+    <div class="attendance-summary-grid">
+        <div class="attendance-summary-card attendance-summary-card--total">
+            <div class="attendance-summary-title">Total registros</div>
+            <div class="attendance-summary-value">{{ resumen.total|default:0 }}</div>
+            <div class="attendance-summary-text">Registros de asistencia guardados en el sistema.</div>
+        </div>
+        <div class="attendance-summary-card attendance-summary-card--present">
+            <div class="attendance-summary-title">Presentes</div>
+            <div class="attendance-summary-value">{{ resumen.presentes|default:0 }}</div>
+            <div class="attendance-summary-text">Alumnos presentes en el último registro.</div>
+        </div>
+        <div class="attendance-summary-card attendance-summary-card--absent">
+            <div class="attendance-summary-title">Ausentes</div>
+            <div class="attendance-summary-value">{{ resumen.ausentes|default:0 }}</div>
+            <div class="attendance-summary-text">Alumnos reportados como ausentes.</div>
+        </div>
+        <div class="attendance-summary-card attendance-summary-card--late">
+            <div class="attendance-summary-title">Tardanzas</div>
+            <div class="attendance-summary-value">{{ resumen.tardanzas|default:0 }}</div>
+            <div class="attendance-summary-text">Registros de llegadas tarde hoy.</div>
+        </div>
+        <div class="attendance-summary-card attendance-summary-card--justified">
+            <div class="attendance-summary-title">Justificados</div>
+            <div class="attendance-summary-value">{{ resumen.justificados|default:0 }}</div>
+            <div class="attendance-summary-text">Ausencias justificadas registradas.</div>
+        </div>
+    </div>
+
+    <form method="get" class="admin-form admin-form-grid">
+        <div class="admin-form-row">
+            <label for="q">Buscar estudiante o grado</label>
+            <input id="q" name="q" type="search" value="{{ query }}" placeholder="Nombre, cédula o grado">
+        </div>
+        <div class="admin-form-row">
+            <label for="grado">Filtrar por grado</label>
+            <select id="grado" name="grado">
+                <option value="">Todos los grados</option>
+                {% for codigo, nombre in grados %}
+                    <option value="{{ codigo }}" {% if grado == codigo %}selected{% endif %}>{{ nombre }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="admin-form-row">
+            <label for="fecha">Fecha</label>
+            <input id="fecha" name="fecha" type="date" value="{{ fecha }}">
+        </div>
+        <div class="admin-form-row admin-form-row--action">
+            <button type="submit" class="button button--primary">Filtrar registros</button>
+        </div>
+    </form>
+
+    <div class="attendance-table-card">
+        <div class="attendance-table-header">
+            <h2>Registros recientes</h2>
+            <span>Últimos ingresos del sistema</span>
+        </div>
+        <form method="get" action="{% url 'admin_exportar_asistencias_pdf' %}" class="admin-actions-grid">
+            <input type="hidden" name="q" value="{{ query }}">
+            <input type="hidden" name="fecha" value="{{ fecha }}">
+            <input type="hidden" name="grado" value="{{ grado }}">
+            <button type="submit" class="button">Exportar grupo a PDF</button>
+        </form>
+        <div class="admin-table-wrapper">
+            <table class="admin-table attendance-table">
+                <thead>
+                    <tr>
+                        <th>Fecha</th>
+                        <th>Estudiante</th>
+                        <th>Cédula</th>
+                        <th>Estado</th>
+                        <th>Observaciones</th>
+                        <th>Registrado</th>
+                        <th>Reporte</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for asistencia in asistencias %}
+                    <tr>
+                        <td>{{ asistencia.fecha }}</td>
+                        <td>{{ asistencia.estudiante.nombre }} {{ asistencia.estudiante.apellido }}</td>
+                        <td>{{ asistencia.estudiante.cedula }}</td>
+                        <td>
+                            <span class="attendance-pill attendance-pill--{{ asistencia.estado|lower }}">{{ asistencia.get_estado_display }}</span>
+                        </td>
+                        <td>{{ asistencia.observaciones|default:'-' }}</td>
+                        <td>{{ asistencia.fecha_registro }}</td>
+                        <td>
+                            <a href="{% url 'admin_exportar_asistencias_pdf' %}?estudiante={{ asistencia.estudiante.cedula|urlencode }}" class="button admin-icon-action" title="Descargar reporte de asistencia del estudiante en PDF" aria-label="Descargar reporte de asistencia en PDF de {{ asistencia.estudiante.nombre }} {{ asistencia.estudiante.apellido }}">
+                                <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3h10l4 4v14H5z"/><path d="M14 3v5h5M8 12h8M8 16h5"/></svg>
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="attendance-empty">No hay registros de asistencia que mostrar.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

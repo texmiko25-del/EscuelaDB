@@ -1,0 +1,28 @@
+{% extends 'escuelaApp/base.html' %}
+{% load static %}
+
+{% block title %}Confirmar eliminación | Escuela{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/admin.css' %}?v=11">
+{% endblock %}
+
+{% block content %}
+    <div class="admin-panel-container">
+        <nav class="admin-breadcrumbs">
+            <a href="{% url 'home' %}">Inicio</a> › <a href="{% url 'admin_panel' %}">Admin</a> › <span>Confirmar eliminación</span>
+        </nav>
+        <div class="admin-card">
+            <h1 class="admin-page-title">Confirmar eliminación</h1>
+            <p>¿Estás seguro de que deseas eliminar al empleado <strong>{{ empleado.user.get_full_name }} ({{ empleado.cedula }})</strong>?</p>
+            <form method="post" class="admin-form">
+                {% csrf_token %}
+                <button type="submit" class="button button--danger" title="Sí, eliminar" aria-label="Sí, eliminar empleado">
+                    <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px;vertical-align:middle;margin-right:0.4rem;"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v5M14 11v5"/></svg>
+                    Sí, eliminar
+                </button>
+                <a href="{% url 'admin_personal' %}" class="button">Cancelar</a>
+            </form>
+        </div>
+    </div>
+{% endblock %}

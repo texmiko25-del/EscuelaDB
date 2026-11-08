@@ -1,0 +1,62 @@
+{% extends 'escuelaApp/base.html' %}
+{% load static %}
+
+{% block title %}Gestionar Asignaciones | Escuela{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/admin.css' %}">
+{% endblock %}
+
+{% block content %}
+    <div class="admin-panel-container">
+        <nav class="admin-breadcrumbs">
+            <a href="{% url 'home' %}">Inicio</a> › <a href="{% url 'admin_panel' %}">Admin</a> › <span>Asignaciones</span>
+        </nav>
+        <h1 class="admin-page-title">Gestionar Asignaciones</h1>
+        <section class="admin-actions-grid">
+            <a href="{% url 'registrar_asignacion' %}" class="button button--success">Registrar nueva asignación</a>
+            <a href="{% url 'admin_personal' %}" class="button">Ver personal</a>
+            <a href="{% url 'admin_estudiantes' %}" class="button">Ver estudiantes</a>
+        </section>
+        <table class="admin-users-table">
+            <thead>
+                <tr>
+                    <th>Estudiante</th>
+                    <th>Docente</th>
+                    <th>Área</th>
+                    <th>Período</th>
+                    <th>Nota</th>
+                    <th>Evaluación</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for asignacion in asignaciones %}
+                    <tr>
+                        <td>{{ asignacion.estudiante.nombre }} {{ asignacion.estudiante.apellido }}<br><small>{{ asignacion.estudiante.cedula }}</small></td>
+                        <td>{{ asignacion.docente.user.get_full_name }}<br><small>{{ asignacion.docente.cedula }}</small></td>
+                        <td>{{ asignacion.area }}</td>
+                        <td>{{ asignacion.periodo }}</td>
+                        <td>{% if asignacion.nota is not None %}{{ asignacion.nota }}{% else %}<em>Sin nota</em>{% endif %}</td>
+                        <td>{% if asignacion.evaluacion %}{{ asignacion.evaluacion }}{% else %}<em>Sin evaluación</em>{% endif %}</td>
+                        <td>
+                            <a href="{% url 'admin_editar_asignacion' asignacion.id %}" class="button button--small">Editar nota</a>
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="7">No hay asignaciones registradas.</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        {% if page_obj.paginator.num_pages > 1 %}
+            <nav class="admin-pagination" aria-label="Paginación de asignaciones">
+                {% if page_obj.has_previous %}<a class="button" href="?page={{ page_obj.previous_page_number }}">Anterior</a>{% endif %}
+                <span>Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span>
+                {% if page_obj.has_next %}<a class="button" href="?page={{ page_obj.next_page_number }}">Siguiente</a>{% endif %}
+            </nav>
+        {% endif %}
+    </div>
+{% endblock %}

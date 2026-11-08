@@ -1,0 +1,47 @@
+{% extends 'escuelaApp/base.html' %}
+{% load static %}
+
+{% block title %}Editar nota de asignación | Escuela{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/admin.css' %}">
+{% endblock %}
+
+{% block content %}
+    <div class="admin-panel-container">
+        <nav class="admin-breadcrumbs">
+            <a href="{% url 'home' %}">Inicio</a> > <a href="{% url 'admin_panel' %}">Admin</a> > <a href="{% url 'admin_asignaciones' %}">Asignaciones</a> > <span>Editar nota</span>
+        </nav>
+        <h1 class="admin-page-title">Editar nota de asignación</h1>
+        <div class="admin-card">
+            <div class="admin-card-body">
+                <p><strong>Estudiante:</strong> {{ asignacion.estudiante.nombre }} {{ asignacion.estudiante.apellido }} ({{ asignacion.estudiante.cedula }})</p>
+                <p><strong>Profesor:</strong> {{ asignacion.docente.user.get_full_name }} ({{ asignacion.docente.cedula }})</p>
+                <p><strong>Especialidad:</strong> {{ especialidad_docente|default:'No registrada' }}</p>
+                <p><strong>Área:</strong> {{ asignacion.area }}</p>
+                <p><strong>Período:</strong> {{ asignacion.periodo }}</p>
+            </div>
+            <form method="post" class="admin-form">
+                {% csrf_token %}
+                {{ form.non_field_errors }}
+                <div class="admin-form-row">
+                    {{ form.nota.label_tag }}
+                    {{ form.nota }}
+                    {{ form.nota.errors }}
+                </div>
+                <div class="admin-form-row">
+                    {{ form.evaluacion.label_tag }}
+                    {{ form.evaluacion }}
+                    {{ form.evaluacion.errors }}
+                </div>
+                <div class="admin-form-row">
+                    {{ form.comentarios.label_tag }}
+                    {{ form.comentarios }}
+                    {{ form.comentarios.errors }}
+                </div>
+                <button type="submit" class="button button--success">Guardar cambios</button>
+                <a href="{% url 'admin_asignaciones' %}" class="button">Cancelar</a>
+            </form>
+        </div>
+    </div>
+{% endblock %}

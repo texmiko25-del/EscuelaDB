@@ -1,0 +1,26 @@
+{% extends 'escuelaApp/base.html' %}
+{% load static %}
+
+{% block title %}Registro rápido - {{ info.nombre|default:'E.B. Elba Rosa de Acevedo' }}{% endblock %}
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/portal.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="portal-container">
+    <h1>Solicitud de matrícula</h1>
+    <p>Adjunta el documento de identidad del representante y la partida de nacimiento. Los archivos deben ser PDF o imagen y pesar hasta 5 MB cada uno.</p>
+    <form method="post" enctype="multipart/form-data" class="admin-form">
+        {% csrf_token %}
+        {{ form.non_field_errors }}
+        {% for field in form %}
+            <div class="admin-form-row{% if field.errors %} has-error{% endif %}">
+                {{ field.label_tag }}
+                {{ field }}
+                {{ field.errors }}
+            </div>
+        {% endfor %}
+        <button type="submit" class="button button--success">Enviar solicitud</button>
+    </form>
+</div>
+{% endblock %}

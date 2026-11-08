@@ -1,0 +1,39 @@
+{% extends 'escuelaApp/base.html' %}
+{% load static %}
+
+{% block title %}Solicitudes de matrícula | Escuela{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'css/admin.css' %}">{% endblock %}
+{% block content %}
+<div class="admin-panel-container">
+    <nav class="admin-breadcrumbs"><a href="{% url 'admin_panel' %}">Panel</a> › <span>Solicitudes de matrícula</span></nav>
+    <header class="admin-page-header">
+        <div><p class="admin-page-kicker">Subdirección</p><h1 class="admin-page-title">Revisión de matrículas</h1></div>
+        <div class="admin-card-actions">
+            <a class="button button--secondary" href="{% url 'subdireccion_reporte_matricula' 'pdf' %}">Reporte PDF</a>
+            <a class="button button--secondary" href="{% url 'subdireccion_reporte_matricula' 'docx' %}">Reporte Word</a>
+        </div>
+    </header>
+
+    <div class="admin-summary-grid">
+        <div class="admin-summary-card"><span>Solicitudes pendientes</span><strong>{{ pendientes }}</strong><p>Requieren revisión de documentos.</p></div>
+        <div class="admin-summary-card"><span>Total de solicitudes</span><strong>{{ total_solicitudes }}</strong><p>Incluye aprobadas y rechazadas.</p></div>
+    </div>
+
+    <form method="get" class="admin-form admin-form-grid">
+        <div class="admin-form-row"><label for="estado">Estado</label><select id="estado" name="estado"><option value="PENDIENTE" {% if estado == 'PENDIENTE' %}selected{% endif %}>Pendientes</option><option value="APROBADA" {% if estado == 'APROBADA' %}selected{% endif %}>Aprobadas</option><option value="RECHAZADA" {% if estado == 'RECHAZADA' %}selected{% endif %}>Rechazadas</option><option value="TODAS" {% if estado == 'TODAS' %}selected{% endif %}>Todas</option></select></div>
+        <div class="admin-form-row"><label for="q">Buscar estudiante o representante</label><input id="q" type="search" name="q" value="{{ query }}"></div>
+        <div class="admin-form-row admin-form-row--action"><button type="submit" class="button button--primary">Filtrar</button></div>
+    </form>
+
+    <div class="table-responsive"><table class="admin-users-table">
+        <thead><tr><th>Solicitud</th><th>Estudiante</th><th>Grado</th><th>Representante</th><th>Parentesco</th><th>Estado</th><th>Enviada</th><th>Acción</th></tr></thead>
+        <tbody>
+            {% for solicitud in solicitudes %}
+                <tr><td>#{{ solicitud.pk }}</td><td>{{ solicitud.estudiante_nombre }} {{ solicitud.estudiante_apellido }}</td><td>{{ solicitud.get_grado_display }}</td><td>{{ solicitud.representante_nombre }} {{ solicitud.representante_apellido }}</td><td>{{ solicitud.representante_parentesco }}</td><td>{{ solicitud.get_estado_display }}</td><td>{{ solicitud.fecha_solicitud|date:'d/m/Y H:i' }}</td><td><a class="button button--secondary" href="{% url 'subdireccion_revisar_matricula' solicitud.pk %}">Revisar</a></td></tr>
+            {% empty %}
+                <tr><td colspan="8">No hay solicitudes para estos filtros.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table></div>
+</div>
+{% endblock %}

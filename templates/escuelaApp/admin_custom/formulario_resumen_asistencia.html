@@ -1,0 +1,39 @@
+{% extends 'escuelaApp/base.html' %}
+{% load static %}
+
+{% block title %}Registrar asistencia por lapso | Escuela{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/admin.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="admin-panel-container">
+    <nav class="admin-breadcrumbs">
+        <a href="{% url 'admin_panel' %}">Admin</a> ›
+        <a href="{% url 'admin_resumenes_asistencia_lapso' %}">Asistencia por lapso</a> ›
+        <span>Registrar</span>
+    </nav>
+    <h1 class="admin-page-title">Registrar resumen de asistencia</h1>
+    <div class="admin-card admin-card--padded">
+        <p>Registra el total del estudiante en el lapso seleccionado. Este resumen no reemplaza la asistencia diaria.</p>
+        <form method="post" class="admin-form">
+            {% csrf_token %}
+            {% if form.non_field_errors %}<div class="admin-form-alert">{{ form.non_field_errors }}</div>{% endif %}
+            <div class="admin-form-grid two-column-form-grid">
+                {% for field in form %}
+                <div class="form-field{% if field.errors %} has-server-error has-error{% endif %}" {% if field.name == 'observaciones' or field.name == 'seguimiento' %}style="grid-column: 1 / -1;"{% endif %}>
+                    <div class="field-header">{{ field.label_tag }}</div>
+                    {{ field }}
+                    {{ field.errors }}
+                </div>
+                {% endfor %}
+            </div>
+            <div class="form-section__nav">
+                <button type="submit" class="button button--success">Guardar resumen</button>
+                <a href="{% url 'admin_resumenes_asistencia_lapso' %}" class="button">Cancelar</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

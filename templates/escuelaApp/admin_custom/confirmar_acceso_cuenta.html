@@ -1,0 +1,51 @@
+{% extends 'escuelaApp/base.html' %}
+{% load static %}
+
+{% block title %}Confirmar acceso | Escuela{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/admin.css' %}?v=9">
+{% endblock %}
+
+{% block extra_js %}
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const password = document.getElementById('id_password');
+            const toggle = document.getElementById('toggle-password-visibility');
+
+            toggle.addEventListener('click', function () {
+                const visible = password.type === 'password';
+                password.type = visible ? 'text' : 'password';
+                toggle.textContent = visible ? 'Ocultar' : 'Mostrar';
+                toggle.setAttribute('aria-label', visible ? 'Ocultar contraseña' : 'Mostrar contraseña');
+                toggle.setAttribute('aria-pressed', String(visible));
+            });
+        });
+    </script>
+{% endblock %}
+
+{% block content %}
+    <div class="admin-panel-container">
+        <nav class="admin-breadcrumbs">
+            <a href="{% url 'admin_panel' %}">Admin</a> › <a href="{% url 'admin_panel' %}">Cuentas</a> › <span>Confirmar acceso</span>
+        </nav>
+        <h1 class="admin-page-title">Confirma tu identidad</h1>
+        <p>Ingresa la contraseña de tu cuenta para confirmar tu identidad antes de modificar la cuenta de <strong>{{ usuario.username }}</strong>.</p>
+        <div class="admin-card">
+            <form method="post" class="admin-form" autocomplete="off">
+                {% csrf_token %}
+                {{ form.non_field_errors }}
+                <div class="admin-form-row">
+                    {{ form.password.label_tag }}
+                    <div class="password-field account-password-field">
+                        {{ form.password }}
+                        <button id="toggle-password-visibility" class="password-visibility-toggle" type="button" aria-controls="id_password" aria-label="Mostrar contraseña" aria-pressed="false">Mostrar</button>
+                    </div>
+                    {{ form.password.errors }}
+                </div>
+                <button type="submit" class="button button--success">Continuar a editar cuenta</button>
+                <a href="{% url 'admin_panel' %}" class="button button--secondary">Cancelar</a>
+            </form>
+        </div>
+    </div>
+{% endblock %}

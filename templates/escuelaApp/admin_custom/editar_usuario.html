@@ -1,0 +1,208 @@
+{% extends 'escuelaApp/base.html' %}
+{% load static %}
+
+{% block title %}Editar Usuario | Escuela{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/admin.css' %}?v=28">
+{% endblock %}
+
+{% block extra_js %}
+    <script src="{% static 'js/dynamic_admin_forms.js' %}?v=6" defer></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const form = document.getElementById('editUserForm');
+            const emailLocal = document.getElementById('email_local');
+            const emailDomain = document.getElementById('email_domain');
+            const emailCustomDomain = document.getElementById('email_domain_custom');
+            const hiddenEmailField = document.getElementById('id_email');
+            const cedulaField = document.getElementById('id_cedula');
+            const passwordField = document.getElementById('id_password');
+            const confirmPasswordField = document.getElementById('id_confirm_password');
+
+            emailLocal.dataset.rule = 'email-split';
+            cedulaField.dataset.rule = 'cedula';
+            passwordField.dataset.rule = 'optional-password';
+            confirmPasswordField.dataset.rule = 'confirm-password';
+
+            function syncEmailField() {
+                let domain = emailDomain.value.trim();
+                if (domain === 'custom') domain = emailCustomDomain.value.trim();
+                hiddenEmailField.value = emailLocal.value.trim() && domain
+                    ? emailLocal.value.trim() + '@' + domain
+                    : '';
+                hiddenEmailField.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+
+            function splitExistingEmail() {
+                const value = hiddenEmailField.value || '';
+                if (!value.includes('@')) return;
+
+                const [local, ...domainParts] = value.split('@');
+                const domain = domainParts.join('@');
+                emailLocal.value = local || '';
+
+                if (Array.from(emailDomain.options).some((option) => option.value === domain)) {
+                    emailDomain.value = domain;
+                    emailCustomDomain.style.display = 'none';
+                } else {
+                    emailDomain.value = 'custom';
+                    emailCustomDomain.value = domain;
+                    emailCustomDomain.style.display = 'block';
+                }
+            }
+
+            emailLocal.addEventListener('input', syncEmailField);
+            emailDomain.addEventListener('change', function () {
+                if (emailDomain.value === 'custom') {
+                    emailCustomDomain.style.display = 'block';
+                    emailCustomDomain.focus();
+                } else {
+                    emailCustomDomain.value = '';
+                    emailCustomDomain.style.display = 'none';
+                }
+                syncEmailField();
+            });
+            emailCustomDomain.addEventListener('input', syncEmailField);
+            form.addEventListener('submit', syncEmailField, true);
+            splitExistingEmail();
+            syncEmailField();
+            [emailLocal, cedulaField, passwordField, confirmPasswordField].forEach((field) => {
+                field.dispatchEvent(new Event('input', { bubbles: true }));
+            });
+        });
+    </script>
+{% endblock %}
+
+{% block content %}
+<div class="admin-panel-container">
+    <nav class="admin-breadcrumbs">
+        <a href="{% url 'admin_panel' %}">Admin</a> › <a href="{% url 'admin_cuentas' %}">Cuentas</a> › <span>Editar usuario</span>
+    </nav>
+    <h1 class="admin-page-title">Editar datos de {{ usuario.username }}</h1>
+
+    <div class="admin-card representative-form-shell">
+        <div class="progress-summary">
+            <div class="progress-summary__header">
+                <span>Progreso del formulario</span>
+                <strong id="progressPercent">0%</strong>
+            </div>
+            <div class="progress-bar" aria-label="Progreso del formulario">
+                <span id="progressBarFill" class="progress-bar__fill"></span>
+            </div>
+        </div>
+
+        <div class="representative-form-legend" aria-label="Estado de los campos">
+            <div class="representative-form-legend__item"><span class="legend-dot legend-dot--filled"></span><span>Campo completo</span></div>
+            <div class="representative-form-legend__item"><span class="legend-dot legend-dot--empty"></span><span>Campo pendiente</span></div>
+        </div>
+
+        <form method="post" class="admin-form" id="editUserForm" data-dynamic-form="editar-usuario" novalidate>
+            {% csrf_token %}
+            {% if form.non_field_errors %}<div class="admin-form-alert">{{ form.non_field_errors }}</div>{% endif %}
+
+            <section class="form-section">
+                <div class="form-section__header">
+                    <div><span class="form-section__eyebrow">Sección 1</span><h2>Datos personales</h2></div>
+                    <span class="form-section__status is-pending">Pendiente</span>
+                </div>
+                <div class="admin-form-grid two-column-form-grid">
+                        <div class="form-field{% if form.username.errors %} has-server-error has-error{% endif %}" data-required="true">
+                            <div class="field-header">{{ form.username.label_tag }}<span class="field-status-badge">Pendiente</span></div>
+                            {{ form.username }}
+                            <small class="admin-form-hint">Solo letras, números y guion bajo; debe ser único.</small>
+                            {{ form.username.errors }}<small class="dynamic-field-error" aria-live="polite"></small>
+                        </div>
+                    <div class="form-field form-field--locked" data-required="false">
+                        <div class="field-header"><label for="id_tipo_identificacion">Tipo de identificación</label><span class="field-status-badge">Fijo</span></div>
+                        {{ form.tipo_identificacion }}
+                    </div>
+                    <div class="form-field form-field--locked{% if form.cedula.errors %} has-server-error has-error{% endif %}" data-required="{{ form.cedula.field.required|yesno:'true,false' }}">
+                        <div class="field-header">{{ form.cedula.label_tag }}<span class="field-status-badge">No editable</span></div>
+                        {{ form.cedula }}
+                        <small class="admin-form-hint">La cédula no se puede modificar después de crear la cuenta.</small>
+                        {{ form.cedula.errors }}<small class="dynamic-field-error" aria-live="polite"></small>
+                    </div>
+                    <div class="form-field{% if form.first_name.errors %} has-server-error has-error{% endif %}" data-required="{{ form.first_name.field.required|yesno:'true,false' }}">
+                            <div class="field-header">{{ form.first_name.label_tag }}<span class="field-status-badge">Pendiente</span></div>
+                        {{ form.first_name }}{{ form.first_name.errors }}<small class="dynamic-field-error" aria-live="polite"></small>
+                    </div>
+                    <div class="form-field{% if form.last_name.errors %} has-server-error has-error{% endif %}" data-required="{{ form.last_name.field.required|yesno:'true,false' }}">
+                            <div class="field-header">{{ form.last_name.label_tag }}<span class="field-status-badge">Pendiente</span></div>
+                        {{ form.last_name }}{{ form.last_name.errors }}<small class="dynamic-field-error" aria-live="polite"></small>
+                    </div>
+                </div>
+            </section>
+
+            <section class="form-section">
+                <div class="form-section__header">
+                    <div><span class="form-section__eyebrow">Sección 2</span><h2>Contacto y acceso</h2></div>
+                    <span class="form-section__status is-pending">Pendiente</span>
+                </div>
+                <div class="admin-form-grid two-column-form-grid">
+                    <div class="form-field{% if form.email.errors %} has-server-error has-error{% endif %}" data-required="{{ form.email.field.required|yesno:'true,false' }}">
+                        <div class="field-header">{{ form.email.label_tag }}<span class="field-status-badge">Pendiente</span></div>
+                        <div class="email-split">
+                            <input type="text" id="email_local" class="email-split__input" placeholder="usuario" aria-label="Nombre del correo" required>
+                            <span class="email-split__at">@</span>
+                            <select id="email_domain" class="email-split__input" aria-label="Dominio del correo" required>
+                                <option value="">Seleccione</option>
+                                <option value="gmail.com">gmail.com</option>
+                                <option value="outlook.com">outlook.com</option>
+                                <option value="hotmail.com">hotmail.com</option>
+                                <option value="yahoo.com">yahoo.com</option>
+                                <option value="icloud.com">icloud.com</option>
+                                <option value="live.com">live.com</option>
+                                <option value="institucional.edu">institucional.edu</option>
+                                <option value="custom">Otro...</option>
+                            </select>
+                            <input type="text" id="email_domain_custom" class="email-split__input email-split__input--custom" placeholder="Escribe otro dominio" aria-label="Otro dominio" style="display:none;">
+                        </div>
+                        <input type="hidden" name="email" id="id_email" value="{{ form.email.value|default:'' }}">
+                        <small class="admin-form-hint">Se usará como correo principal de esta cuenta.</small>
+                        {{ form.email.errors }}<small class="dynamic-field-error" aria-live="polite"></small>
+                    </div>
+                    <div class="form-field{% if form.cargo.errors %} has-server-error has-error{% endif %}" data-required="{{ form.cargo.field.required|yesno:'true,false' }}">
+                        <div class="field-header">{{ form.cargo.label_tag }}<span class="field-status-badge">Opcional</span></div>
+                        {{ form.cargo }}{{ form.cargo.errors }}<small class="dynamic-field-error" aria-live="polite"></small>
+                    </div>
+                    <div class="form-field{% if form.password.errors %} has-server-error has-error{% endif %}" data-required="{{ form.password.field.required|yesno:'true,false' }}">
+                        <div class="field-header">{{ form.password.label_tag }}<span class="field-status-badge">Opcional</span></div>
+                        <div class="password-field account-password-field">
+                            {{ form.password }}
+                            <button type="button" class="password-visibility-toggle password-toggle-btn" data-target="id_password" aria-controls="id_password" aria-label="Mostrar nueva contraseña" aria-pressed="false">Mostrar</button>
+                        </div>
+                        <small class="admin-form-hint">Déjala vacía para conservar la contraseña actual.</small>
+                        {{ form.password.errors }}<small class="dynamic-field-error" aria-live="polite"></small>
+                    </div>
+                    <div class="form-field{% if form.confirm_password.errors %} has-server-error has-error{% endif %}" data-required="{{ form.confirm_password.field.required|yesno:'true,false' }}">
+                        <div class="field-header">{{ form.confirm_password.label_tag }}<span class="field-status-badge">Opcional</span></div>
+                        <div class="password-field account-password-field">
+                            {{ form.confirm_password }}
+                            <button type="button" class="password-visibility-toggle password-toggle-btn" data-target="id_confirm_password" aria-controls="id_confirm_password" aria-label="Mostrar confirmación de contraseña" aria-pressed="false">Mostrar</button>
+                        </div>
+                        {{ form.confirm_password.errors }}<small class="dynamic-field-error" aria-live="polite"></small>
+                    </div>
+                </div>
+            </section>
+
+            <div class="form-section__nav">
+                <button type="button" class="button button--secondary" id="reviewDynamicFormButton">Revisar datos</button>
+                <button type="submit" class="button button--success">Guardar cambios</button>
+                <a href="{% url 'admin_cuentas' %}" class="button button--secondary">Cancelar</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="field-modal-backdrop" id="dynamicFormModal" aria-hidden="true">
+    <div class="field-modal" role="dialog" aria-modal="true" aria-labelledby="dynamicFormModalTitle">
+        <div class="field-modal__header">
+            <div class="field-modal__icon" aria-hidden="true">!</div>
+            <div><p class="field-modal__eyebrow">Validación de cuenta</p><h3 id="dynamicFormModalTitle">Revisa los datos</h3></div>
+        </div>
+        <p id="dynamicFormModalMessage">Revisa los campos antes de continuar.</p>
+        <div class="field-modal__actions"><button type="button" class="button button--secondary" id="closeDynamicFormModal">Cerrar</button></div>
+    </div>
+</div>
+{% endblock %}

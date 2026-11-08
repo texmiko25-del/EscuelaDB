@@ -1,0 +1,97 @@
+{% extends 'escuelaApp/base.html' %}
+{% load static %}
+
+{% block title %}{{ info.nombre|default:'E.B. Elba Rosa de Acevedo' }} - Inicio{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/portal.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="portal-content">
+    <div class="portal-card">
+        <div class="portal-hero">
+            <div class="portal-hero-inner">
+                {% if info.logo_path %}
+                    <img src="{% static info.logo_path %}" alt="Logo" class="portal-logo">
+                {% endif %}
+                <span class="portal-label">Institución educativa</span>
+                <h1>Bienvenido a {{ info.nombre|default:'E.B. Elba Rosa de Acevedo' }}</h1>
+                {% if info.descripcion %}
+                    <p class="lead">{{ info.descripcion }}</p>
+                {% endif %}
+                <div class="portal-cta">
+                    <a href="{% url 'portal_about' %}" class="button button--primary">Sobre nosotros</a>
+                    <a href="{% url 'portal_contact' %}" class="button button--ghost">Contacto</a>
+                </div>
+            </div>
+        </div>
+
+        <section class="portal-info-grid portal-info-grid--full">
+            <div class="info-card">
+                <h3>Horario</h3>
+                <p>{{ config.horario_atencion|default:'Horario no especificado' }}</p>
+            </div>
+            <div class="info-card">
+                <h3>Dirección</h3>
+                <p>{{ config.direccion|default:'Dirección no especificada' }}</p>
+            </div>
+            <div class="info-card">
+                <h3>Teléfono / Email</h3>
+                <p>{{ config.telefono_email|default:'- / -' }}</p>
+            </div>
+        </section>
+
+        {% if config.fecha_inicio_clases %}
+        <section class="portal-highlight-card">
+            <div>
+                <span class="highlight-label">Próximo inicio de clases</span>
+                <h2>{{ config.fecha_inicio_clases|date:'d \de F, Y' }}</h2>
+            </div>
+            <p>Planifica tus actividades y mantente al tanto de la fecha de apertura del grado.</p>
+        </section>
+    {% endif %}
+
+    {% if grouped_horarios %}
+        <section class="portal-schedule-section">
+            <div class="section-header">
+                <div>
+                    <span class="section-label">Horarios</span>
+                    <h2>Horarios por grado</h2>
+                </div>
+                <p>Consulta los bloques y los docentes de cada grado de forma clara y organizada.</p>
+            </div>
+            <div class="portal-schedule-grid">
+                {% for grupo in grouped_horarios %}
+                    <section class="portal-schedule-grade" aria-labelledby="portal-grade-{{ forloop.counter }}">
+                        <header class="portal-schedule-grade__header">
+                            <h3 id="portal-grade-{{ forloop.counter }}">{{ grupo.display }}</h3>
+                            <span>Horario semanal</span>
+                        </header>
+                        <div class="portal-schedule-week-scroll" role="region" aria-label="Horario semanal de {{ grupo.display }}" tabindex="0">
+                            <div class="portal-schedule-week">
+                                {% for dia in grupo.dias %}
+                                    <section class="portal-schedule-day">
+                                        <h4>{{ dia.name }}</h4>
+                                        <div class="portal-schedule-day__blocks">
+                                            {% for horario in dia.items %}
+                                                <article class="portal-schedule-block">
+                                                    <strong>{{ horario.materia }}</strong>
+                                                    <span>{{ horario.docente.nombre }} {{ horario.docente.apellido }}</span>
+                                                    <time>{{ horario.hora_inicio|time:'H:i' }} - {{ horario.hora_fin|time:'H:i' }}</time>
+                                                </article>
+                                            {% empty %}
+                                                <p class="portal-schedule-empty">Sin clases</p>
+                            {% endfor %}
+                                        </div>
+                                    </section>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </section>
+                {% endfor %}
+            </div>
+        </section>
+    {% endif %}
+</div>
+{% endblock %}

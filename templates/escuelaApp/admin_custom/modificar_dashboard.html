@@ -1,0 +1,79 @@
+{% extends 'escuelaApp/base.html' %}
+{% load static %}
+
+{% block title %}Modificar Panel | Escuela{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/admin.css' %}">
+{% endblock %}
+
+{% block content %}
+    <div class="admin-panel-container">
+        <nav class="admin-breadcrumbs">
+            <a href="{% url 'admin_panel' %}">Admin</a> › <span>Configuración</span>
+        </nav>
+        <h1 class="admin-page-title">Modificar configuración del panel</h1>
+        <div class="admin-card">
+            <form method="post" class="admin-form" enctype="multipart/form-data">
+                {% csrf_token %}
+                {{ form.non_field_errors }}
+
+                <div class="admin-form-row">
+                    {{ form.titulo_panel.label_tag }}
+                    {{ form.titulo_panel }}
+                    {{ form.titulo_panel.errors }}
+                </div>
+
+                <div class="admin-form-row">
+                    {{ form.mensaje_bienvenida.label_tag }}
+                    {{ form.mensaje_bienvenida }}
+                    {{ form.mensaje_bienvenida.errors }}
+                </div>
+
+                <div class="admin-form-row">
+                    {{ form.imagen_portada.label_tag }}
+                    {{ form.imagen_portada }}
+                    {{ form.imagen_portada.errors }}
+                </div>
+
+                <div class="admin-form-row">
+                    {{ form.color_fondo.label_tag }}
+                    {{ form.color_fondo }}
+                    {{ form.color_fondo.errors }}
+                </div>
+
+                <div class="admin-form-row">
+                    {{ form.horario_atencion.label_tag }}
+                    {{ form.horario_atencion }}
+                    {{ form.horario_atencion.errors }}
+                </div>
+
+                <div class="admin-form-row">
+                    {{ form.direccion.label_tag }}
+                    {{ form.direccion }}
+                    {{ form.direccion.errors }}
+                </div>
+
+                <div class="admin-form-row">
+                    {{ form.telefono_email.label_tag }}
+                    {{ form.telefono_email }}
+                    {{ form.telefono_email.errors }}
+                </div>
+
+                <div class="admin-form-row">
+                    {{ form.fecha_inicio_clases.label_tag }}
+                    {{ form.fecha_inicio_clases }}
+                    {{ form.fecha_inicio_clases.errors }}
+                </div>
+
+                <div class="admin-form-checkbox">
+                    {{ form.mantenimiento_activo }}
+                    {{ form.mantenimiento_activo.label_tag }}
+                    {{ form.mantenimiento_activo.errors }}
+                </div>
+
+                <button type="submit" class="button button--primary">Actualizar configuración</button>
+            </form>
+        </div>
+    </div>
+{% endblock %}

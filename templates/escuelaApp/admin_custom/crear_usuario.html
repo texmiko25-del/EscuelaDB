@@ -1,0 +1,644 @@
+{% extends 'escuelaApp/base.html' %}
+{% load static %}
+
+{% block title %}Crear Usuario | Escuela{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/admin.css' %}?v=28">
+{% endblock %}
+
+{% block extra_js %}
+    <script src="{% static 'js/cedula_unica.js' %}?v=5"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const form = document.getElementById('createUserForm');
+            const usernameField = document.getElementById('id_username');
+            const modal = document.getElementById('fieldModalBackdrop');
+            const modalTitle = document.getElementById('fieldModalTitle');
+            const modalMessage = document.getElementById('fieldModalMessage');
+            const modalIcon = document.getElementById('fieldModalIcon');
+            const closeModalBtn = document.getElementById('closeModalBtn');
+            const reviewFieldsBtn = document.getElementById('reviewFieldsBtn');
+            const prevStepBtn = document.getElementById('prevStepBtn');
+            const nextStepBtn = document.getElementById('nextStepBtn');
+            const submitUserBtn = document.getElementById('submitUserBtn');
+            const passwordField = document.getElementById('id_password');
+            const tipoIdentificacionField = document.getElementById('id_tipo_identificacion');
+            const cedulaField = document.getElementById('id_cedula');
+            const cedulaLimitWarning = document.getElementById('cedulaLimitWarning');
+            const generatePasswordBtn = document.getElementById('generate-password-btn');
+            const emailLocal = document.getElementById('email_local');
+            const emailDomain = document.getElementById('email_domain');
+            const emailCustomDomain = document.getElementById('email_domain_custom');
+            const hiddenEmailField = document.getElementById('id_email');
+            const steps = Array.from(document.querySelectorAll('.form-step'));
+            let currentStep = 0;
+
+            usernameField.addEventListener('input', function () {
+                usernameField.value = usernameField.value.replace(/[^A-Za-z0-9_]/g, '');
+            });
+
+            function syncEmailField() {
+                if (!emailLocal || !emailDomain || !hiddenEmailField) return;
+
+                let domainValue = emailDomain.value.trim();
+                if (domainValue === 'custom') {
+                    domainValue = emailCustomDomain ? emailCustomDomain.value.trim() : '';
+                }
+
+                const combined = emailLocal.value.trim() && domainValue ? emailLocal.value.trim() + '@' + domainValue : '';
+                hiddenEmailField.value = combined;
+
+                if (emailLocal.value.trim() || domainValue) {
+                    emailLocal.setAttribute('data-filled', 'true');
+                    emailDomain.setAttribute('data-filled', 'true');
+                } else {
+                    emailLocal.removeAttribute('data-filled');
+                    emailDomain.removeAttribute('data-filled');
+                }
+
+                if (emailCustomDomain && emailCustomDomain.value.trim() && !Array.from(emailDomain.options).some((option) => option.value === emailCustomDomain.value.trim())) {
+                    emailDomain.value = 'custom';
+                    emailCustomDomain.style.display = 'block';
+                }
+            }
+
+            function splitExistingEmail() {
+                if (!hiddenEmailField || !emailLocal || !emailDomain) return;
+
+                const value = hiddenEmailField.value || '';
+                if (!value || !value.includes('@')) {
+                    emailLocal.value = '';
+                    emailDomain.value = '';
+                    if (emailCustomDomain) {
+                        emailCustomDomain.value = '';
+                        emailCustomDomain.style.display = 'none';
+                    }
+                    return;
+                }
+
+                const [local, ...domainSegments] = value.split('@');
+                emailLocal.value = local || '';
+                const domainValue = domainSegments.join('@') || '';
+                const domainOptions = Array.from(emailDomain.options).map((option) => option.value);
+
+                if (domainOptions.includes(domainValue)) {
+                    emailDomain.value = domainValue;
+                    if (emailCustomDomain) {
+                        emailCustomDomain.value = '';
+                        emailCustomDomain.style.display = 'none';
+                    }
+                } else {
+                    emailDomain.value = 'custom';
+                    if (emailCustomDomain) {
+                        emailCustomDomain.value = domainValue;
+                        emailCustomDomain.style.display = 'block';
+                    }
+                }
+            }
+
+            function syncCedulaPrefix() {
+                if (!tipoIdentificacionField || !cedulaField) return;
+
+                const tipo = (tipoIdentificacionField.value || 'V').toUpperCase();
+                const maxDigits = tipo === 'V' ? 8 : 9;
+                const value = (cedulaField.value || '').trim();
+                const digits = (value.replace(/^[A-Z]-?/i, '').replace(/\D/g, '')).slice(0, maxDigits);
+
+                cedulaField.maxLength = tipo === 'V' ? 10 : 11;
+                cedulaField.value = tipo + '-' + digits;
+                cedulaField.dataset.warningShown = 'false';
+
+                if (cedulaLimitWarning) {
+                    cedulaLimitWarning.classList.remove('is-visible');
+                }
+            }
+
+            function showStep(stepIndex) {
+                currentStep = Math.max(0, Math.min(stepIndex, steps.length - 1));
+                steps.forEach(function (step, index) {
+                    step.classList.toggle('is-active', index === currentStep);
+                    step.style.display = index === currentStep ? 'block' : 'none';
+                });
+
+                if (prevStepBtn) {
+                    prevStepBtn.style.display = currentStep === 0 ? 'none' : 'inline-flex';
+                }
+
+                if (nextStepBtn) {
+                    nextStepBtn.style.display = currentStep < steps.length - 1 ? 'inline-flex' : 'none';
+                }
+
+                if (submitUserBtn) {
+                    submitUserBtn.style.display = currentStep === steps.length - 1 ? 'inline-flex' : 'none';
+                }
+            }
+
+            function getFieldValue(field) {
+                if (!field) return '';
+                if (field.type === 'checkbox') return field.checked;
+                return (field.value || '').trim();
+            }
+
+            function getFieldLabel(field) {
+                const label = field.closest('.form-field')?.querySelector('label')?.textContent?.trim();
+                if (label) return label.replace(/\*$/, '').trim();
+                return field.name || 'Este campo';
+            }
+
+            function openModal(type, message) {
+                modalTitle.textContent = type === 'warning' ? 'Advertencia' : 'Campo verificado';
+                modalMessage.textContent = message;
+                modalIcon.textContent = type === 'warning' ? '!' : '✓';
+                modalIcon.style.background = type === 'warning' ? '#fff3cd' : '#dcfce7';
+                modalIcon.style.color = type === 'warning' ? '#a16207' : '#166534';
+                modal.classList.add('is-open');
+                modal.setAttribute('aria-hidden', 'false');
+            }
+
+            function closeModal() {
+                modal.classList.remove('is-open');
+                modal.setAttribute('aria-hidden', 'true');
+            }
+
+            function updateFieldStatus(field) {
+                const wrapper = field.closest('.form-field');
+                if (!wrapper) return;
+
+                const value = getFieldValue(field);
+                const isFilled = value !== '' && value !== false;
+                const badge = wrapper.querySelector('.field-status-badge');
+
+                wrapper.classList.toggle('is-filled', isFilled);
+                wrapper.classList.toggle('is-empty', !isFilled);
+
+                if (badge) {
+                    badge.textContent = isFilled ? 'Listo' : 'Pendiente';
+                }
+            }
+
+            function updateSectionStatus(section) {
+                const fields = Array.from(section.querySelectorAll('input, select, textarea'));
+                const total = fields.length;
+                const filled = fields.filter((field) => {
+                    const value = getFieldValue(field);
+                    return value !== '' && value !== false;
+                }).length;
+
+                const counter = section.querySelector('.form-section__status');
+                if (counter) {
+                    const complete = filled === total;
+                    counter.textContent = complete ? 'Completo' : (filled > 0 ? filled + '/' + total : 'Pendiente');
+                    counter.classList.toggle('is-complete', complete);
+                    counter.classList.toggle('is-pending', !complete);
+                }
+            }
+
+            function updateProgressBar() {
+                const allFields = Array.from(form.querySelectorAll('input, select, textarea'));
+                const total = allFields.length;
+                const filled = allFields.filter((field) => {
+                    const value = getFieldValue(field);
+                    return value !== '' && value !== false;
+                }).length;
+
+                const percent = total ? Math.round((filled / total) * 100) : 0;
+                const bar = document.getElementById('progressBarFill');
+                const percentLabel = document.getElementById('progressPercent');
+
+                if (bar) bar.style.width = percent + '%';
+                if (percentLabel) percentLabel.textContent = percent + '%';
+            }
+
+            function refreshSectionStates() {
+                document.querySelectorAll('.form-section').forEach(updateSectionStatus);
+                updateProgressBar();
+            }
+
+            function generateSecurePassword() {
+                const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789';
+                let password = 'A' + 'b' + '3';
+                while (password.length < 12) {
+                    password += chars[Math.floor(Math.random() * chars.length)];
+                }
+                password = password.split('').sort(function () { return 0.5 - Math.random(); }).join('');
+                return password;
+            }
+
+            function isEmailSplitComplete(requireForCurrentStep = false) {
+                if (!emailLocal || !emailDomain || !hiddenEmailField) return true;
+                if (!requireForCurrentStep) return true;
+                syncEmailField();
+                return Boolean(hiddenEmailField.value.trim());
+            }
+
+            if (prevStepBtn) {
+                prevStepBtn.addEventListener('click', function () {
+                    showStep(currentStep - 1);
+                });
+            }
+
+            if (nextStepBtn) {
+                nextStepBtn.addEventListener('click', function () {
+                    const currentStepContainsEmail = steps[currentStep]?.querySelector('#email_local') !== null;
+                    const fieldsInStep = Array.from(steps[currentStep].querySelectorAll('input, select, textarea')).filter(function (field) {
+                        return ![emailLocal, emailDomain, emailCustomDomain, hiddenEmailField].includes(field);
+                    });
+                    const invalidField = fieldsInStep.find(function (field) {
+                        const value = getFieldValue(field);
+                        return value === '' || value === false || !field.checkValidity();
+                    });
+
+                    if (currentStepContainsEmail && !isEmailSplitComplete(true)) {
+                        openModal('warning', 'Falta completar: "Correo electrónico" antes de continuar.');
+                        if (emailLocal) emailLocal.focus();
+                        return;
+                    }
+
+                    if (invalidField) {
+                        openModal('warning', 'Completa o corrige el campo: "' + getFieldLabel(invalidField) + '" antes de continuar.');
+                        invalidField.focus();
+                        return;
+                    }
+
+                    showStep(currentStep + 1);
+                });
+            }
+
+            const confirmPasswordField = document.getElementById('id_confirm_password');
+
+            document.querySelectorAll('.password-toggle-btn').forEach(function (button) {
+                button.addEventListener('click', function () {
+                    const targetId = button.getAttribute('data-target');
+                    const input = document.getElementById(targetId);
+                    if (!input) return;
+
+                    const shouldShow = input.type === 'password';
+                    input.type = shouldShow ? 'text' : 'password';
+                    button.textContent = shouldShow ? 'Ocultar' : 'Mostrar';
+                    button.setAttribute('aria-label', shouldShow ? 'Ocultar contraseña' : 'Mostrar contraseña');
+                    button.setAttribute('aria-pressed', String(shouldShow));
+                });
+            });
+
+            if (passwordField && generatePasswordBtn) {
+                generatePasswordBtn.addEventListener('click', function () {
+                    const nextPassword = generateSecurePassword();
+                    passwordField.value = nextPassword;
+                    if (confirmPasswordField) {
+                        confirmPasswordField.value = nextPassword;
+                    }
+                    passwordField.dispatchEvent(new Event('input', { bubbles: true }));
+                    if (confirmPasswordField) {
+                        confirmPasswordField.dispatchEvent(new Event('input', { bubbles: true }));
+                    }
+                    updateFieldStatus(passwordField);
+                    if (confirmPasswordField) {
+                        updateFieldStatus(confirmPasswordField);
+                    }
+                    refreshSectionStates();
+                });
+            }
+
+            document.querySelectorAll('#createUserForm input, #createUserForm select, #createUserForm textarea').forEach(function (field) {
+                updateFieldStatus(field);
+                field.addEventListener('input', function () {
+                    if (field === tipoIdentificacionField) {
+                        syncCedulaPrefix();
+                    }
+                    updateFieldStatus(field);
+                    refreshSectionStates();
+                });
+                field.addEventListener('change', function () {
+                    if (field === tipoIdentificacionField) {
+                        syncCedulaPrefix();
+                    }
+                    updateFieldStatus(field);
+                    refreshSectionStates();
+                });
+                field.addEventListener('focus', function () {
+                    const wrapper = field.closest('.form-field');
+                    if (wrapper) {
+                        wrapper.classList.add('is-focus');
+                    }
+                });
+                field.addEventListener('blur', function () {
+                    const wrapper = field.closest('.form-field');
+                    if (wrapper) {
+                        wrapper.classList.remove('is-focus');
+                    }
+                });
+            });
+
+            if (tipoIdentificacionField) {
+                tipoIdentificacionField.addEventListener('change', syncCedulaPrefix);
+                tipoIdentificacionField.addEventListener('input', syncCedulaPrefix);
+            }
+
+            if (cedulaField) {
+                cedulaField.addEventListener('input', function () {
+                    const tipo = (tipoIdentificacionField?.value || 'V').toUpperCase();
+                    const maxDigits = tipo === 'V' ? 8 : 9;
+                    const numericValue = (cedulaField.value || '').replace(/^[A-Z]-?/i, '').replace(/\D/g, '').slice(0, maxDigits);
+                    cedulaField.value = tipo + '-' + numericValue;
+
+                    if (cedulaLimitWarning) {
+                        const shouldShowWarning = numericValue.length >= maxDigits;
+                        cedulaLimitWarning.classList.toggle('is-visible', shouldShowWarning);
+                        cedulaField.dataset.warningShown = shouldShowWarning ? 'true' : 'false';
+                    }
+                });
+            }
+
+            if (emailLocal && emailDomain) {
+                splitExistingEmail();
+                emailLocal.addEventListener('input', syncEmailField);
+                emailDomain.addEventListener('change', function () {
+                    if (this.value === 'custom') {
+                        if (emailCustomDomain) {
+                            emailCustomDomain.style.display = 'block';
+                            emailCustomDomain.focus();
+                        }
+                    } else {
+                        if (emailCustomDomain) {
+                            emailCustomDomain.style.display = 'none';
+                            emailCustomDomain.value = '';
+                        }
+                    }
+                    syncEmailField();
+                });
+
+                if (emailCustomDomain) {
+                    emailCustomDomain.addEventListener('input', function () {
+                        if (emailCustomDomain.value.trim() && !Array.from(emailDomain.options).some((option) => option.value === emailCustomDomain.value.trim())) {
+                            emailDomain.value = 'custom';
+                        }
+                        syncEmailField();
+                    });
+                }
+            }
+
+            form.addEventListener('submit', function (event) {
+                const rawFields = Array.from(form.querySelectorAll('input, select, textarea')).filter(function (field) {
+                    return ![emailLocal, emailDomain, emailCustomDomain, hiddenEmailField].includes(field);
+                });
+                const emptyFields = rawFields.filter(function (field) {
+                    const value = getFieldValue(field);
+                    return value === '' || value === false || !field.checkValidity();
+                });
+
+                if (steps[currentStep]?.querySelector('#email_local') && !isEmailSplitComplete(true)) {
+                    event.preventDefault();
+                    openModal('warning', 'Aún falta completar: "Correo electrónico".');
+                    if (emailLocal) emailLocal.focus();
+                    return;
+                }
+
+                if (emptyFields.length > 0) {
+                    event.preventDefault();
+                    const firstEmpty = emptyFields[0];
+                    openModal('warning', 'Completa o corrige el campo: "' + getFieldLabel(firstEmpty) + '".');
+                    firstEmpty.focus();
+                }
+            });
+
+            if (reviewFieldsBtn) {
+                reviewFieldsBtn.addEventListener('click', function () {
+                    const rawFields = Array.from(form.querySelectorAll('input, select, textarea')).filter(function (field) {
+                        return ![emailLocal, emailDomain, emailCustomDomain, hiddenEmailField].includes(field);
+                    });
+                    const emptyField = rawFields.find(function (field) {
+                        const value = getFieldValue(field);
+                        return value === '' || value === false || !field.checkValidity();
+                    });
+
+                    if (steps[currentStep]?.querySelector('#email_local') && !isEmailSplitComplete(true)) {
+                        openModal('warning', 'Falta completar: "Correo electrónico".');
+                        if (emailLocal) emailLocal.focus();
+                        return;
+                    }
+
+                    if (emptyField) {
+                        openModal('warning', 'Completa o corrige el campo: "' + getFieldLabel(emptyField) + '".');
+                        emptyField.focus();
+                        return;
+                    }
+
+                    openModal('success', 'Todos los campos están completos y listos para guardar.');
+                });
+            }
+
+            closeModalBtn.addEventListener('click', closeModal);
+            modal.addEventListener('click', function (event) {
+                if (event.target === modal) {
+                    closeModal();
+                }
+            });
+
+            refreshSectionStates();
+        });
+    </script>
+{% endblock %}
+
+{% block content %}
+    <div class="admin-panel-container">
+        <nav class="admin-breadcrumbs">
+            <a href="{% url 'admin_panel' %}">Admin</a> › <span>Crear usuario</span>
+        </nav>
+
+        <div class="admin-card representative-form-shell">
+            <div class="form-status-sticky">
+                <div class="progress-summary">
+                    <div class="progress-summary__header">
+                        <span>Progreso del formulario</span>
+                        <strong id="progressPercent">0%</strong>
+                    </div>
+                    <div class="progress-bar" aria-label="Progreso del formulario">
+                        <span id="progressBarFill" class="progress-bar__fill"></span>
+                    </div>
+                </div>
+
+                <div class="representative-form-legend">
+                    <div class="representative-form-legend__item">
+                        <span class="legend-dot legend-dot--filled"></span>
+                        <span>Campo completo</span>
+                    </div>
+                    <div class="representative-form-legend__item">
+                        <span class="legend-dot legend-dot--empty"></span>
+                        <span>Campo pendiente</span>
+                    </div>
+                </div>
+            </div>
+
+            <form method="post" class="admin-form" id="createUserForm" novalidate>
+                {% csrf_token %}
+
+                {% if form.non_field_errors %}
+                    <div class="admin-form-alert">{{ form.non_field_errors }}</div>
+                {% endif %}
+
+                <div class="form-section form-step is-active" data-section-title="Datos personales">
+                    <div class="form-section__header">
+                        <div>
+                            <span class="form-section__eyebrow">Sección 1</span>
+                            <h2>Datos personales</h2>
+                        </div>
+                        <span class="form-section__status is-pending">Pendiente</span>
+                    </div>
+
+                    <div class="admin-form-grid two-column-form-grid">
+                        <div class="form-field{% if form.first_name.errors %} has-error{% endif %}">
+                            <div class="field-header">
+                                {{ form.first_name.label_tag }}
+                                <span class="field-status-badge">Pendiente</span>
+                            </div>
+                            {{ form.first_name }}
+                            <small class="admin-form-hint">Solo letras, espacios, puntos o guiones.</small>
+                            {{ form.first_name.errors }}
+                        </div>
+
+                        <div class="form-field{% if form.last_name.errors %} has-error{% endif %}">
+                            <div class="field-header">
+                                {{ form.last_name.label_tag }}
+                                <span class="field-status-badge">Pendiente</span>
+                            </div>
+                            {{ form.last_name }}
+                            <small class="admin-form-hint">Solo letras, espacios, puntos o guiones.</small>
+                            {{ form.last_name.errors }}
+                        </div>
+
+                            <div class="form-field{% if form.tipo_identificacion.errors %} has-error{% endif %}">
+                            <div class="field-header">
+                                {{ form.tipo_identificacion.label_tag }}
+                                <span class="field-status-badge">Pendiente</span>
+                            </div>
+                            {{ form.tipo_identificacion }}
+                            {{ form.tipo_identificacion.errors }}
+                        </div>
+
+                        <div class="form-field{% if form.cedula.errors %} has-error{% endif %}">
+                            <div class="field-header">
+                                {{ form.cedula.label_tag }}
+                                <span class="field-status-badge">Pendiente</span>
+                            </div>
+                            {{ form.cedula }}
+                            <small class="cedula-limit-warning" id="cedulaLimitWarning" aria-live="polite">Máximo alcanzado para este tipo de identificación.</small>
+                            <small class="admin-form-hint">Venezolana: 7 u 8 dígitos. Extranjera: de 6 a 9 dígitos.</small>
+                            {{ form.cedula.errors }}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-section form-step" data-section-title="Contacto y acceso">
+                    <div class="form-section__header">
+                        <div>
+                            <span class="form-section__eyebrow">Sección 2</span>
+                            <h2>Contacto y acceso</h2>
+                        </div>
+                        <span class="form-section__status is-pending">Pendiente</span>
+                    </div>
+
+                    <div class="admin-form-grid two-column-form-grid">
+                        <div class="form-field{% if form.email.errors %} has-error{% endif %}">
+                            <div class="field-header">
+                                {{ form.email.label_tag }}
+                                <span class="field-status-badge">Pendiente</span>
+                            </div>
+                            <div class="email-split">
+                                <input type="text" id="email_local" class="email-split__input" placeholder="usuario" aria-label="Nombre del correo">
+                                <span class="email-split__at">@</span>
+                                <select id="email_domain" class="email-split__input" aria-label="Dominio del correo">
+                                    <option value="">Seleccione</option>
+                                    <option value="gmail.com">gmail.com</option>
+                                    <option value="outlook.com">outlook.com</option>
+                                    <option value="hotmail.com">hotmail.com</option>
+                                    <option value="yahoo.com">yahoo.com</option>
+                                    <option value="icloud.com">icloud.com</option>
+                                    <option value="live.com">live.com</option>
+                                    <option value="institucional.edu">institucional.edu</option>
+                                    <option value="custom">Otro...</option>
+                                </select>
+                                <input type="text" id="email_domain_custom" class="email-split__input email-split__input--custom" placeholder="Escribe otro dominio" aria-label="Otro dominio" style="display:none;">
+                            </div>
+                            <input type="hidden" name="email" id="id_email" value="{{ form.email.value|default:'' }}">
+                            <small class="admin-form-hint">Se usará como correo principal del usuario.</small>
+                            {{ form.email.errors }}
+                        </div>
+
+                        <div class="form-field{% if form.username.errors %} has-error{% endif %}">
+                            <div class="field-header">
+                                {{ form.username.label_tag }}
+                                <span class="field-status-badge">Pendiente</span>
+                            </div>
+                            {{ form.username }}
+                            <small class="admin-form-hint">Solo letras y números, sin espacios ni símbolos. Ejemplo: AnaRojas24.</small>
+                            {{ form.username.errors }}
+                        </div>
+
+                        <div class="form-field{% if form.password.errors %} has-error{% endif %}">
+                            <div class="field-header">
+                                {{ form.password.label_tag }}
+                                <span class="field-status-badge">Pendiente</span>
+                            </div>
+                            <div class="password-generator-wrapper">
+                                <div class="password-field account-password-field">
+                                    {{ form.password }}
+                                    <button type="button" class="password-visibility-toggle password-toggle-btn" data-target="id_password" aria-controls="id_password" aria-label="Mostrar contraseña" aria-pressed="false">Mostrar</button>
+                                </div>
+                                <button type="button" class="button button--secondary" id="generate-password-btn">Generar otra</button>
+                            </div>
+                            <small class="admin-form-hint">Debe contener mayúscula, minúscula, número y al menos 12 caracteres.</small>
+                            {{ form.password.errors }}
+                        </div>
+
+                        <div class="form-field{% if form.confirm_password.errors %} has-error{% endif %}">
+                            <div class="field-header">
+                                {{ form.confirm_password.label_tag }}
+                                <span class="field-status-badge">Pendiente</span>
+                            </div>
+                            <div class="password-field account-password-field">
+                                {{ form.confirm_password }}
+                                <button type="button" class="password-visibility-toggle password-toggle-btn" data-target="id_confirm_password" aria-controls="id_confirm_password" aria-label="Mostrar confirmación de contraseña" aria-pressed="false">Mostrar</button>
+                            </div>
+                            {{ form.confirm_password.errors }}
+                        </div>
+
+                        <div class="form-field{% if form.cargo.errors %} has-error{% endif %}">
+                            <div class="field-header">
+                                {{ form.cargo.label_tag }}
+                                <span class="field-status-badge">Pendiente</span>
+                            </div>
+                            {{ form.cargo }}
+                            <small class="admin-form-hint">Seleccione el cargo del usuario.</small>
+                            {{ form.cargo.errors }}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-section__nav">
+                    <button type="button" class="button button--secondary" id="prevStepBtn" style="display:none;">Anterior</button>
+                    <button type="button" class="button button--primary" id="nextStepBtn">Siguiente</button>
+                    <button type="submit" class="button button--success" id="submitUserBtn" style="display:none;">Guardar usuario</button>
+                    <button type="button" class="button button--secondary" id="reviewFieldsBtn">Revisar campos</button>
+                    <a href="{% url 'admin_panel' %}" class="button button--secondary">Cancelar</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="field-modal-backdrop" id="fieldModalBackdrop" aria-hidden="true">
+        <div class="field-modal" role="dialog" aria-modal="true" aria-labelledby="fieldModalTitle">
+            <div class="field-modal__header">
+                <div class="field-modal__icon" id="fieldModalIcon">!</div>
+                <div>
+                    <p class="field-modal__eyebrow">Validación</p>
+                    <h3 id="fieldModalTitle">Advertencia</h3>
+                </div>
+            </div>
+            <p id="fieldModalMessage">Revisa este campo antes de continuar.</p>
+            <div class="field-modal__actions">
+                <button type="button" class="button button--secondary" id="closeModalBtn">Cerrar</button>
+            </div>
+        </div>
+    </div>
+{% endblock %}

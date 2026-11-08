@@ -1,0 +1,153 @@
+{% extends 'escuelaApp/base.html' %}
+{% load static %}
+
+{% block title %}Registro Académico | Escuela{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/admin.css' %}">
+{% endblock %}
+
+{% block content %}
+    <div class="admin-panel-container">
+        <nav class="admin-breadcrumbs">
+            <a href="{% url 'home' %}">Inicio</a> › <a href="{% url 'admin_panel' %}">Admin</a> › <span>Registro Académico</span>
+        </nav>
+        <h1 class="admin-page-title">Registro Académico</h1>
+        <section class="admin-actions-grid">
+            {% if request.user.empleado.cargo != 'ASISTENTE' %}
+                <a href="{% url 'admin_crear_registro_academico' %}" class="button button--success">Registrar nueva nota</a>
+            {% endif %}
+            <a href="{% url 'admin_resumenes_asistencia_lapso' %}" class="button">Resúmenes de asistencia por lapso</a>
+            {% if request.user.empleado.cargo != 'ASISTENTE' %}
+                <a href="{% url 'admin_asignaciones' %}" class="button">Ver asignaciones</a>
+            {% endif %}
+            <a href="{% url 'admin_estudiantes' %}" class="button">Ver estudiantes</a>
+            {% if request.user.empleado.cargo == 'DIRECTORA' or request.user.empleado.cargo == 'SUBDIRECTORA' %}
+                <a href="{% url 'admin_representantes' %}" class="button">Ver representantes</a>
+            {% endif %}
+            <form method="get" action="{% url 'admin_exportar_registros_academicos_pdf' %}">
+                <input type="hidden" name="q" value="{{ query }}">
+                <input type="hidden" name="periodo" value="{{ periodo }}">
+                <input type="hidden" name="grado" value="{{ grado }}">
+                <input type="hidden" name="estado" value="{{ estado }}">
+                <button type="submit" class="button">Exportar grupo a PDF</button>
+            </form>
+        </section>
+
+        <div class="admin-summary-grid admin-summary-grid--academic">
+            <div class="admin-summary-card admin-summary-card--blue">
+                <span>Registros totales</span>
+                <strong>{{ total_registros }}</strong>
+                <p>Registros de notas y evaluaciones.</p>
+            </div>
+            <div class="admin-summary-card admin-summary-card--green">
+                <span>Registros con nota</span>
+                <strong>{{ total_con_nota }}</strong>
+                <p>Entradas con calificación A-F registrada.</p>
+            </div>
+            <div class="admin-summary-card admin-summary-card--gold">
+                <span>Promedio de nota</span>
+                <strong>{{ promedio_nota }}%</strong>
+                <p>Promedio porcentual de las materias.</p>
+            </div>
+        </div>
+
+        <div class="admin-card admin-card--padded">
+            <form method="get" class="admin-form admin-form-grid">
+                <div class="admin-form-row">
+                    <label for="q">Buscar</label>
+                    <input id="q" name="q" type="text" value="{{ query }}" placeholder="Estudiante, grado, área, evaluación" />
+                </div>
+                <div class="admin-form-row">
+                    <label for="grado">Grado</label>
+                    <select id="grado" name="grado">
+                        <option value="">Todos los grados</option>
+                        {% for codigo, nombre in grados %}
+                            <option value="{{ codigo }}" {% if grado == codigo %}selected{% endif %}>{{ nombre }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="admin-form-row">
+                    <label for="periodo">Período</label>
+                    <select id="periodo" name="periodo">
+                        <option value="">Todos</option>
+                        {% for item in periodos %}
+                            <option value="{{ item }}" {% if periodo == item %}selected{% endif %}>{{ item }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="admin-form-row">
+                    <label for="estado">Estado</label>
+                    <select id="estado" name="estado">
+                        <option value="">Todos</option>
+                        {% for item in estados %}
+                            <option value="{{ item }}" {% if estado == item %}selected{% endif %}>{{ item }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="admin-form-row admin-form-row--action">
+                    <button type="submit" class="button button--primary">Aplicar filtros</button>
+                </div>
+            </form>
+        </div>
+
+        <div class="admin-table-scroll">
+            <table class="admin-users-table">
+                <thead>
+                    <tr>
+                        <th>Estudiante</th>
+                        <th>Cédula</th>
+                        <th>Área</th>
+                        <th>Período</th>
+                        <th>Lapso</th>
+                        <th>Evaluación</th>
+                        <th>Docente</th>
+                        <th>Nota</th>
+                        <th>Porcentaje</th>
+                        <th>Estado</th>
+                        <th>Observaciones / seguimiento</th>
+                        <th>Fecha</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for registro in registros %}
+                        <tr>
+                            <td>{{ registro.estudiante.nombre }} {{ registro.estudiante.apellido }}</td>
+                            <td>{{ registro.estudiante.cedula }}</td>
+                            <td>{{ registro.area }}</td>
+                            <td>{{ registro.periodo }}</td>
+                            <td>{{ registro.get_lapso_display|default:"Histórico" }}</td>
+                            <td>{{ registro.tipo_evaluacion|default:"—" }}</td>
+                            <td>{% if registro.docente %}{{ registro.docente.user.get_full_name }} ({{ registro.docente.cedula }}){% else %}<em>No asignado</em>{% endif %}</td>
+                            <td>{% if registro.nota %}{{ registro.nota }}{% else %}<em>Sin nota</em>{% endif %}</td>
+                            <td>{% if registro.porcentaje is not None %}{{ registro.porcentaje }}%{% else %}<em>Sin porcentaje</em>{% endif %}</td>
+                            <td>{{ registro.estado }}</td>
+                            <td>{{ registro.comentarios|default:"—" }}{% if registro.seguimiento %}<br><strong>Seguimiento:</strong> {{ registro.seguimiento }}{% endif %}</td>
+                            <td>{{ registro.fecha_registro|date:'Y-m-d H:i' }}</td>
+                            <td>
+                                <a href="{% url 'admin_exportar_registros_academicos_pdf' %}?estudiante={{ registro.estudiante.cedula|urlencode }}" class="button button--small">PDF del estudiante</a>
+                                {% if request.user.empleado.cargo != 'ASISTENTE' %}
+                                <a href="{% url 'admin_editar_registro_academico' registro.id %}" class="button button--small">Editar</a>
+                                {% endif %}
+                                {% if registro.tiene_constancia %}<a href="{% url 'descargar_constancia_calificacion' registro.id %}" class="button button--small">Constancia PDF</a>{% endif %}
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="13">No hay registros académicos cargados.</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% if page_obj.paginator.num_pages > 1 %}
+            <nav class="admin-pagination" aria-label="Paginación de registros académicos">
+                {% if page_obj.has_previous %}<a class="button" href="?page={{ page_obj.previous_page_number }}{% if query %}&q={{ query|urlencode }}{% endif %}{% if estado %}&estado={{ estado|urlencode }}{% endif %}{% if periodo %}&periodo={{ periodo|urlencode }}{% endif %}{% if grado %}&grado={{ grado|urlencode }}{% endif %}">Anterior</a>{% endif %}
+                <span>Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span>
+                {% if page_obj.has_next %}<a class="button" href="?page={{ page_obj.next_page_number }}{% if query %}&q={{ query|urlencode }}{% endif %}{% if estado %}&estado={{ estado|urlencode }}{% endif %}{% if periodo %}&periodo={{ periodo|urlencode }}{% endif %}{% if grado %}&grado={{ grado|urlencode }}{% endif %}">Siguiente</a>{% endif %}
+            </nav>
+        {% endif %}
+    </div>
+{% endblock %}

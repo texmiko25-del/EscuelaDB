@@ -1,0 +1,111 @@
+{% extends 'escuelaApp/base.html' %}
+{% load static %}
+
+{% block title %}Cuentas registradas | Escuela{% endblock %}
+{% block body_class %}account-management-body{% endblock %}
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/admin.css' %}?v=26">
+{% endblock %}
+
+{% block content %}
+<div class="admin-panel-container account-management-page">
+    <header class="account-page-header">
+        <div class="account-page-heading">
+            <nav class="admin-breadcrumbs">
+                <a href="{% url 'admin_panel' %}">Admin</a> › <span>Cuentas</span>
+            </nav>
+            <p class="account-page-kicker">Administración de acceso</p>
+            <h1 class="admin-page-title account-page-title">Cuentas registradas</h1>
+        </div>
+        <a href="{% url 'admin_crear_usuario' %}" class="button button--success">+ Crear cuenta</a>
+    </header>
+
+    <div class="admin-summary-grid account-summary">
+        <div class="admin-summary-card account-summary-card account-summary-card--total">
+            <span>Total de cuentas</span><strong>{{ total_cuentas }}</strong><p>Cuentas registradas en el sistema.</p>
+        </div>
+        <div class="admin-summary-card account-summary-card account-summary-card--staff">
+            <span>Acceso al panel</span><strong>{{ admin_count }}</strong><p>Cuentas con permisos de personal.</p>
+        </div>
+        <div class="admin-summary-card account-summary-card account-summary-card--results">
+            <span>Coincidencias</span><strong>{{ resultados }}</strong><p>Resultados de la búsqueda actual.</p>
+        </div>
+    </div>
+
+    <section class="account-search-panel" aria-label="Buscar cuentas">
+        <form method="get" class="account-search-form" role="search">
+            <div class="account-search-field">
+                <label for="q">Buscar cuenta</label>
+                <input class="account-search-input" id="q" type="search" name="q" value="{{ query }}" placeholder="Usuario, nombre o correo">
+            </div>
+            <div class="account-search-actions">
+                <button type="submit" class="button button--primary">Buscar</button>
+                {% if query %}<a class="button button--secondary" href="{% url 'admin_cuentas' %}">Limpiar</a>{% endif %}
+            </div>
+        </form>
+    </section>
+
+    <section class="account-list-panel">
+        <div class="account-list-heading">
+            <div><h2>Listado de cuentas</h2><p>Las cuentas protegidas son de solo lectura y no se pueden modificar ni eliminar.</p></div>
+            <span class="account-result-count">{{ resultados }} resultados</span>
+        </div>
+        <div class="account-table-scroll">
+            <table class="admin-users-table account-table">
+                <thead>
+                    <tr><th>Usuario</th><th>Correo</th><th>Nombre</th><th>Acceso al panel</th><th>Estado de la cuenta</th><th>Último acceso</th><th>Acciones</th></tr>
+                </thead>
+                <tbody>
+                    {% for u in usuarios %}
+                        <tr>
+                            <td><strong>{{ u.username }}</strong></td>
+                            <td>{{ u.email|default:'No especificado' }}</td>
+                            <td>{{ u.get_full_name|default:'Sin nombre' }}</td>
+                            <td><span class="account-access-pill{% if u.is_staff %} is-enabled{% endif %}">{% if u.is_staff %}Habilitado{% else %}No habilitado{% endif %}</span></td>
+                            <td><span class="account-status-pill{% if u.is_active %} is-active{% else %} is-restricted{% endif %}">{% if u.is_active %}Habilitada{% else %}Restringida{% endif %}</span></td>
+                            <td>{{ u.last_login|date:'d/m/Y H:i'|default:'Nunca' }}</td>
+                            <td>
+                                <div class="admin-actions-inline">
+                                    {% if u == request.user %}
+                                        <a href="{% url 'mi_cuenta' %}" class="button button--secondary admin-icon-action" title="Abrir mi cuenta" aria-label="Abrir mi cuenta">
+                                            <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"></circle><path d="M5 21v-2a7 7 0 0 1 14 0v2"></path></svg>
+                                        </a>
+                                    {% elif u.is_superuser %}
+                                        <span class="admin-status-text" title="Cuenta protegida: solo lectura">Solo lectura</span>
+                                    {% elif request.user.is_superuser %}
+                                        <a href="{% url 'admin_editar_usuario' u.id %}" class="button button--secondary admin-icon-action" title="Editar cuenta" aria-label="Editar cuenta {{ u.username }}">
+                                            <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L8 18l-4 1 1-4Z"/></svg>
+                                        </a>
+                                    {% endif %}
+                                    {% if u != request.user and not u.is_superuser %}
+                                        {% if u.empleado.cargo != 'DIRECTORA' %}
+                                            <form method="post" action="{% url 'admin_toggle_usuario' u.id %}" class="inline-form" onsubmit="return confirm('¿{% if u.is_active %}Restringir{% else %}Habilitar{% endif %} la cuenta {{ u.username|escapejs }}?');">
+                                                {% csrf_token %}
+                                                <button type="submit" class="button {% if u.is_active %}button--danger{% else %}button--success{% endif %} admin-icon-action" title="{% if u.is_active %}Restringir cuenta{% else %}Habilitar cuenta{% endif %}" aria-label="{% if u.is_active %}Restringir{% else %}Habilitar{% endif %} cuenta {{ u.username }}">
+                                                    {% if u.is_active %}
+                                                        <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M8 8l8 8"></path></svg>
+                                                    {% else %}
+                                                        <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v10"></path><path d="M5.6 5.6a9 9 0 1 0 12.8 0"></path></svg>
+                                                    {% endif %}
+                                                </button>
+                                            </form>
+                                        {% endif %}
+                                        <form method="post" action="{% url 'admin_eliminar_usuario' u.id %}" class="inline-form" onsubmit="return confirm('¿Eliminar la cuenta {{ u.username|escapejs }}?');">
+                                            {% csrf_token %}
+                                            <button type="submit" class="button button--danger admin-icon-action" title="Eliminar cuenta" aria-label="Eliminar cuenta {{ u.username }}">
+                                                <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v5M14 11v5"/></svg>
+                                            </button>
+                                        </form>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr><td colspan="7" class="admin-form-hint">No hay cuentas que coincidan con la búsqueda.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+</div>
+{% endblock %}

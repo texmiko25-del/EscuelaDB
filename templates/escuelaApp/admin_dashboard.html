@@ -1,0 +1,17 @@
+{% extends 'escuelaApp/base.html' %}
+{% load static %}
+
+{% block title %}Admin | Escuela{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/admin.css' %}">
+{% endblock %}
+
+{% block content %}
+    <div class="admin-panel-container">
+        <h1 class="admin-page-title">Panel administrativo</h1>
+        <p class="admin-page-message">Sólo los administradores pueden crear y modificar cuentas de usuario.</p>
+        <p class="admin-page-message">Usa el panel de Django para registrar nuevas cuentas, editar usuarios existentes y administrar permisos.</p>
+        <a class="button" href="/admin/">Ir al administrador</a>
+    </div>
+{% endblock %}

@@ -1,0 +1,343 @@
+{% extends 'escuelaApp/base.html' %}
+{% load static %}
+
+{% block title %}Formulario de Profesor | Escuela{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/admin.css' %}?v=28">
+{% endblock %}
+
+{% block content %}
+    <div class="admin-panel-container">
+        <nav class="admin-breadcrumbs">
+            <a href="{% url 'home' %}">Inicio</a> › <a href="{% url 'admin_panel' %}">Admin</a> › <a href="{% url 'admin_docentes' %}">Profesores</a> › <span>{% if docente %}Editar{% else %}Crear{% endif %}</span>
+        </nav>
+        <h1 class="admin-page-title">{% if docente %}Editar Profesor{% else %}Crear Profesor{% endif %}</h1>
+
+        <div class="admin-card representative-form-shell">
+            <div class="progress-summary">
+                <div class="progress-summary__header">
+                    <span>Progreso del formulario</span>
+                    <strong id="progressPercent">0%</strong>
+                </div>
+                <div class="progress-bar" aria-label="Progreso del formulario">
+                    <span id="progressBarFill" class="progress-bar__fill"></span>
+                </div>
+            </div>
+
+            <div class="representative-form-legend">
+                <div class="representative-form-legend__item">
+                    <span class="legend-dot legend-dot--filled"></span>
+                    <span>Campo completo</span>
+                </div>
+                <div class="representative-form-legend__item">
+                    <span class="legend-dot legend-dot--empty"></span>
+                    <span>Campo pendiente</span>
+                </div>
+            </div>
+
+            <form method="post" class="admin-form" id="docenteForm" novalidate>
+                {% csrf_token %}
+                {{ form.non_field_errors }}
+
+                <div class="form-section" data-section-title="Datos personales">
+                    <div class="form-section__header">
+                        <div>
+                            <span class="form-section__eyebrow">Sección 1</span>
+                            <h2>Datos personales</h2>
+                        </div>
+                        <span class="form-section__status">0/4</span>
+                    </div>
+
+                    <div class="admin-form-grid">
+                        <div class="form-field{% if form.nombre.errors %} has-error{% endif %}">
+                            <div class="field-header">
+                                {{ form.nombre.label_tag }}
+                                <span class="field-status-badge">Pendiente</span>
+                            </div>
+                            {{ form.nombre }}
+                            {{ form.nombre.errors }}
+                        </div>
+
+                        <div class="form-field{% if form.apellido.errors %} has-error{% endif %}">
+                            <div class="field-header">
+                                {{ form.apellido.label_tag }}
+                                <span class="field-status-badge">Pendiente</span>
+                            </div>
+                            {{ form.apellido }}
+                            {{ form.apellido.errors }}
+                        </div>
+
+                        <div class="form-field{% if form.cedula.errors %} has-error{% endif %}">
+                            <div class="field-header">
+                                {{ form.cedula.label_tag }}
+                                <span class="field-status-badge">Pendiente</span>
+                            </div>
+                            {{ form.cedula }}
+                            {{ form.cedula.errors }}
+                        </div>
+
+                        <div class="form-field{% if form.tipo_identificacion.errors %} has-error{% endif %}">
+                            <div class="field-header">
+                                {{ form.tipo_identificacion.label_tag }}
+                                <span class="field-status-badge">Pendiente</span>
+                            </div>
+                            {{ form.tipo_identificacion }}
+                            {{ form.tipo_identificacion.errors }}
+                        </div>
+
+                        <div class="form-field{% if form.telefono.errors %} has-error{% endif %}">
+                            <div class="field-header">
+                                {{ form.telefono.label_tag }}
+                                <span class="field-status-badge">Pendiente</span>
+                            </div>
+                            <div class="phone-split" style="display:flex; gap:0.5rem; align-items:center;">
+                                <select id="telefono_prefijo" class="phone-split__input" aria-label="Prefijo telefónico" style="max-width:120px;">
+                                    <option value="">Prefijo</option>
+                                    <option value="0414">0414</option>
+                                    <option value="0424">0424</option>
+                                    <option value="0416">0416</option>
+                                    <option value="0426">0426</option>
+                                    <option value="0412">0412</option>
+                                </select>
+                                <input type="text" id="telefono_numero" class="phone-split__input" placeholder="1234567" maxlength="7" aria-label="Resto del número" style="flex:1; min-width:0;">
+                            </div>
+                            {{ form.telefono }}
+                            {{ form.telefono.errors }}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-section" data-section-title="Datos académicos">
+                    <div class="form-section__header">
+                        <div>
+                            <span class="form-section__eyebrow">Sección 2</span>
+                            <h2>Datos académicos</h2>
+                        </div>
+                        <span class="form-section__status">0/2</span>
+                    </div>
+
+                    <div class="admin-form-grid">
+                        <div class="form-field{% if form.especialidad.errors %} has-error{% endif %}">
+                            <div class="field-header">
+                                {{ form.especialidad.label_tag }}
+                                <span class="field-status-badge">Pendiente</span>
+                            </div>
+                            {{ form.especialidad }}
+                            <datalist id="materias-list">
+                                {% for materia, etiqueta in form.MATERIAS %}
+                                    <option value="{{ materia }}">{{ etiqueta }}</option>
+                                {% endfor %}
+                            </datalist>
+                            {{ form.especialidad.errors }}
+                        </div>
+
+                        <div class="form-field{% if form.carga_horaria.errors %} has-error{% endif %}">
+                            <div class="field-header">
+                                {{ form.carga_horaria.label_tag }}
+                                <span class="field-status-badge">Pendiente</span>
+                            </div>
+                            {{ form.carga_horaria }}
+                            {{ form.carga_horaria.errors }}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="admin-form-actions">
+                    <button type="submit" class="button button--success">Guardar profesor</button>
+                    <button type="button" class="button button--secondary" id="reviewFieldsBtn">Revisar campos</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="field-modal-backdrop" id="fieldModalBackdrop" aria-hidden="true">
+        <div class="field-modal" role="dialog" aria-modal="true" aria-labelledby="fieldModalTitle">
+            <div class="field-modal__header">
+                <div class="field-modal__icon" id="fieldModalIcon">!</div>
+                <div>
+                    <p class="field-modal__eyebrow">Validación del formulario</p>
+                    <h3 id="fieldModalTitle">Advertencia</h3>
+                </div>
+            </div>
+            <p id="fieldModalMessage">Revisa este campo antes de continuar.</p>
+            <div class="field-modal__actions">
+                <button type="button" class="button button--secondary" id="closeModalBtn">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="{% static 'js/cedula_unica.js' %}?v=5"></script>
+    <script>
+        (function () {
+            const form = document.getElementById('docenteForm');
+            const modal = document.getElementById('fieldModalBackdrop');
+            const modalTitle = document.getElementById('fieldModalTitle');
+            const modalMessage = document.getElementById('fieldModalMessage');
+            const modalIcon = document.getElementById('fieldModalIcon');
+            const closeModalBtn = document.getElementById('closeModalBtn');
+            const reviewFieldsBtn = document.getElementById('reviewFieldsBtn');
+            const phonePrefix = document.getElementById('telefono_prefijo');
+            const phoneNumber = document.getElementById('telefono_numero');
+            const hiddenPhone = document.getElementById('id_telefono');
+
+            function getFieldValue(field) {
+                if (!field) return '';
+                if (field.type === 'checkbox') return field.checked;
+                return (field.value || '').trim();
+            }
+
+            function updateFieldStatus(field) {
+                const wrapper = field.closest('.form-field');
+                if (!wrapper) return;
+                const value = getFieldValue(field);
+                const isFilled = value !== '' && value !== false;
+                const badge = wrapper.querySelector('.field-status-badge');
+                wrapper.classList.toggle('is-filled', isFilled);
+                wrapper.classList.toggle('is-empty', !isFilled);
+                if (badge) badge.textContent = isFilled ? 'Listo' : 'Pendiente';
+            }
+
+            function updateSectionStatus(section) {
+                const fields = Array.from(section.querySelectorAll('input, select, textarea'));
+                const total = fields.length;
+                const filled = fields.filter((field) => {
+                    const value = getFieldValue(field);
+                    return value !== '' && value !== false;
+                }).length;
+                const counter = section.querySelector('.form-section__status');
+                if (counter) counter.textContent = filled + '/' + total;
+            }
+
+            function updateProgressBar() {
+                const allFields = Array.from(form.querySelectorAll('input, select, textarea'));
+                const totalFields = allFields.length;
+                const filledFields = allFields.filter((field) => {
+                    const value = getFieldValue(field);
+                    return value !== '' && value !== false;
+                }).length;
+                const percent = totalFields ? Math.round((filledFields / totalFields) * 100) : 0;
+                const bar = document.getElementById('progressBarFill');
+                const percentLabel = document.getElementById('progressPercent');
+                if (bar) bar.style.width = percent + '%';
+                if (percentLabel) percentLabel.textContent = percent + '%';
+            }
+
+            function openModal(type, message) {
+                modalTitle.textContent = type === 'warning' ? 'Advertencia' : 'Campo completado';
+                modalMessage.textContent = message;
+                modalIcon.textContent = type === 'warning' ? '!' : '✓';
+                modalIcon.style.background = type === 'warning' ? '#fff3cd' : '#dcfce7';
+                modalIcon.style.color = type === 'warning' ? '#a16207' : '#166534';
+                modal.classList.add('is-open');
+                modal.setAttribute('aria-hidden', 'false');
+            }
+
+            function closeModal() {
+                modal.classList.remove('is-open');
+                modal.setAttribute('aria-hidden', 'true');
+            }
+
+            function validateField(field) {
+                const value = getFieldValue(field);
+                const phonePrefixField = document.getElementById('telefono_prefijo');
+                const phoneNumberField = document.getElementById('telefono_numero');
+                const phoneField = field === phonePrefixField || field === phoneNumberField || field === hiddenPhone;
+                if (phoneField) {
+                    const prefix = phonePrefixField?.value || '';
+                    const digits = (phoneNumberField?.value || '').trim();
+                    if ((prefix || digits) && !/^0(?:414|424|416|426|412)\d{7}$/.test(prefix + digits)) {
+                        openModal('warning', 'El teléfono debe comenzar con 0414, 0424, 0416, 0426 o 0412 y tener 11 dígitos.');
+                        return false;
+                    }
+                }
+                if (value === '' || value === false) {
+                    return true;
+                }
+                if (field.name === 'cedula' && !/^(?:V-\d{7,8}|E-\d{6,9})$/.test(value)) {
+                    openModal('warning', 'Venezolana: 7 u 8 dígitos. Extranjera: de 6 a 9 dígitos.');
+                    return false;
+                }
+                if (field.name === 'carga_horaria' && (!/^\d+$/.test(value) || Number(value) < 1 || Number(value) > 5)) {
+                    openModal('warning', 'La carga horaria debe estar entre 1 y 5 horas.');
+                    return false;
+                }
+                return true;
+            }
+
+            function syncPhoneField() {
+                if (!phonePrefix || !phoneNumber || !hiddenPhone) return;
+                const prefix = phonePrefix.value;
+                const digits = phoneNumber.value.replace(/\D/g, '').slice(0, 7);
+                phoneNumber.value = digits;
+                hiddenPhone.value = prefix && digits ? prefix + digits : '';
+            }
+
+            function splitExistingPhone() {
+                if (!hiddenPhone || !phonePrefix || !phoneNumber) return;
+                const value = (hiddenPhone.value || '').replace(/\D/g, '');
+                const validPrefixes = ['0414', '0424', '0416', '0426', '0412'];
+                const prefix = value.slice(0, 4);
+                phonePrefix.value = validPrefixes.includes(prefix) ? prefix : '';
+                phoneNumber.value = value.slice(4, 11);
+            }
+
+            document.querySelectorAll('#docenteForm input, #docenteForm select, #docenteForm textarea').forEach((field) => {
+                updateFieldStatus(field);
+                field.addEventListener('blur', () => {
+                    if (field.tagName === 'SELECT') return;
+                    validateField(field);
+                });
+                field.addEventListener('input', () => {
+                    if (field === phoneNumber) syncPhoneField();
+                    updateFieldStatus(field);
+                    document.querySelectorAll('.form-section').forEach(updateSectionStatus);
+                    updateProgressBar();
+                });
+                field.addEventListener('change', () => {
+                    if (field === phonePrefix) syncPhoneField();
+                    updateFieldStatus(field);
+                    document.querySelectorAll('.form-section').forEach(updateSectionStatus);
+                    updateProgressBar();
+                });
+            });
+
+            splitExistingPhone();
+            phonePrefix?.addEventListener('change', syncPhoneField);
+            phoneNumber?.addEventListener('input', syncPhoneField);
+
+            form.addEventListener('submit', function (event) {
+                const fields = Array.from(form.querySelectorAll('input, select, textarea'));
+                const invalidField = fields.find((field) => {
+                    const value = getFieldValue(field);
+                    return value !== '' && value !== false && !validateField(field);
+                });
+                if (invalidField) {
+                    event.preventDefault();
+                    invalidField.focus();
+                }
+            });
+
+            reviewFieldsBtn.addEventListener('click', () => {
+                const allFields = Array.from(form.querySelectorAll('input, select, textarea'));
+                const invalidField = allFields.find((field) => {
+                    const value = getFieldValue(field);
+                    return value !== '' && value !== false && !validateField(field);
+                });
+                if (invalidField) {
+                    invalidField.focus();
+                    return;
+                }
+                openModal('success', 'Los datos ingresados están correctos. Los campos vacíos no generan errores.');
+            });
+
+            closeModalBtn.addEventListener('click', closeModal);
+            modal.addEventListener('click', (event) => {
+                if (event.target === modal) closeModal();
+            });
+
+            document.querySelectorAll('.form-section').forEach(updateSectionStatus);
+            updateProgressBar();
+        })();
+    </script>
+{% endblock %}

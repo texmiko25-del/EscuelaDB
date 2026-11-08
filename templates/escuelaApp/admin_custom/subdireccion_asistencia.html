@@ -1,0 +1,28 @@
+{% extends 'escuelaApp/base.html' %}
+{% load static %}
+
+{% block title %}Asistencia del personal | Escuela{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'css/admin.css' %}">{% endblock %}
+{% block content %}
+<div class="admin-panel-container">
+    <nav class="admin-breadcrumbs"><a href="{% url 'admin_panel' %}">Panel</a> › <span>Asistencia del personal</span></nav>
+    <header class="admin-page-header"><div><p class="admin-page-kicker">Subdirección</p><h1 class="admin-page-title">Control de asistencia del personal</h1></div><a class="button button--success" href="{% url 'subdireccion_registrar_asistencia' %}">Registrar asistencia</a></header>
+
+    <form method="get" class="admin-form admin-form-grid">
+        <div class="admin-form-row"><label for="mes">Mes</label><select id="mes" name="mes">{% for numero, nombre in meses %}<option value="{{ numero }}" {% if mes == numero %}selected{% endif %}>{{ nombre }}</option>{% endfor %}</select></div>
+        <div class="admin-form-row"><label for="anio">Año</label><select id="anio" name="anio">{% for valor in anios %}<option value="{{ valor }}" {% if anio == valor %}selected{% endif %}>{{ valor }}</option>{% endfor %}</select></div>
+        <div class="admin-form-row"><label for="q">Buscar empleado</label><input id="q" type="search" name="q" value="{{ query }}"></div>
+        <div class="admin-form-row admin-form-row--action"><button class="button button--primary" type="submit">Filtrar</button></div>
+    </form>
+
+    <div class="admin-summary-grid">
+        <div class="admin-summary-card"><span>Presentes</span><strong>{{ resumen.presentes|default:0 }}</strong></div><div class="admin-summary-card"><span>Ausencias</span><strong>{{ resumen.ausentes|default:0 }}</strong></div><div class="admin-summary-card"><span>Tardanzas</span><strong>{{ resumen.tardanzas|default:0 }}</strong></div><div class="admin-summary-card"><span>Justificados</span><strong>{{ resumen.justificados|default:0 }}</strong></div>
+    </div>
+    <div class="admin-card-actions"><a class="button button--secondary" href="{% url 'subdireccion_reporte_asistencia' 'pdf' %}?mes={{ mes }}&anio={{ anio }}">Reporte PDF</a><a class="button button--secondary" href="{% url 'subdireccion_reporte_asistencia' 'docx' %}?mes={{ mes }}&anio={{ anio }}">Reporte Word</a></div>
+
+    <div class="table-responsive"><table class="admin-users-table">
+        <thead><tr><th>Fecha</th><th>Empleado</th><th>Cédula</th><th>Cargo</th><th>Estado</th><th>Justificación / observaciones</th><th>Registrada por</th></tr></thead>
+        <tbody>{% for registro in registros %}<tr><td>{{ registro.fecha|date:'d/m/Y' }}</td><td>{{ registro.empleado.user.get_full_name|default:registro.empleado.user.username }}</td><td>{{ registro.empleado.cedula }}</td><td>{{ registro.empleado.get_cargo_display }}</td><td>{{ registro.get_estado_display }}</td><td>{{ registro.observaciones|default:'-' }}</td><td>{{ registro.registrado_por|default:'-' }}</td></tr>{% empty %}<tr><td colspan="7">No hay asistencias del personal en este período.</td></tr>{% endfor %}</tbody>
+    </table></div>
+</div>
+{% endblock %}

@@ -1,0 +1,24 @@
+{% extends 'escuelaApp/base.html' %}
+{% load static %}
+
+{% block title %}{{ info.titulo|default:'Sobre nosotros' }}{% endblock %}
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/portal.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="portal-container">
+    <a href="{% url 'portal_home' %}" class="back-to-top" aria-label="Volver al portal"><span>Volver al portal</span></a>
+    <div class="portal-about-header">
+        <h1>{{ info.titulo|default:'Sobre nosotros' }}</h1>
+        {% if info.imagen %}
+            <div class="portal-about-image">
+                <img src="{{ info.imagen.url }}" alt="{{ info.titulo|default:'Imagen sobre nosotros' }}">
+            </div>
+        {% endif %}
+    </div>
+    <div class="portal-about-content">
+        <p>{{ info.contenido|linebreaks }}</p>
+    </div>
+</div>
+{% endblock %}

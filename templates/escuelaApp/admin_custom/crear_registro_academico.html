@@ -1,0 +1,16 @@
+{% extends 'escuelaApp/base.html' %}
+{% load static %}
+
+{% block title %}Registrar Nota Académica | Escuela{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/admin.css' %}?v=12">
+{% endblock %}
+
+{% block extra_js %}
+    <script src="{% static 'js/dynamic_admin_forms.js' %}?v=4" defer></script>
+{% endblock %}
+
+{% block content %}
+    {% include 'escuelaApp/admin_custom/includes/formulario_registro_academico.html' %}
+{% endblock %}

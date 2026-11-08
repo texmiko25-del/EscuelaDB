@@ -1,0 +1,220 @@
+{% extends 'escuelaApp/base.html' %}
+{% load static %}
+
+{% block title %}Gestión de Docentes | Escuela{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/admin.css' %}?v=12">
+{% endblock %}
+
+{% block content %}
+    <div class="admin-panel-container">
+        <nav class="admin-breadcrumbs">
+            <a href="{% url 'home' %}">Inicio</a> › <a href="{% url 'admin_panel' %}">Admin</a> › <span>Docentes</span>
+        </nav>
+        <h1 class="admin-page-title">Gestión de Docentes</h1>
+
+
+        <form method="get" class="admin-form registry-search-form" data-registry-search data-results-key="docentes" data-results-url="{% url 'admin_docentes' %}">
+            <div class="admin-form-row registry-search-form__field">
+                <label for="q">Buscar por nombre o cédula</label>
+                <div class="registry-search-form__input-wrap">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"></circle><path d="m16 16 4.5 4.5"></path></svg>
+                    <input id="q" type="search" name="q" value="{{ query }}" placeholder="Nombre, apellido o cédula" autocomplete="off">
+                </div>
+                <small class="admin-form-hint">Los resultados se actualizan mientras escribes.</small>
+            </div>
+        </form>
+
+        <section id="filter-results" aria-live="polite" {% if not query %}hidden{% endif %}>
+                <h2 id="filter-results-title">Resultados para «{{ query }}» ({{ total_en_lista }})</h2>
+                <table class="admin-users-table">
+                    <thead>
+                        <tr><th>Nombre</th><th>Cédula</th><th>Especialidad</th><th>Carga horaria</th></tr>
+                    </thead>
+                    <tbody id="filter-results-body" data-search-fields="nombre,cedula,especialidad,carga_horaria" data-empty-message="No se encontraron docentes.">
+                        {% for docente in docentes %}
+                            <tr>
+                                <td>{{ docente.nombre }} {{ docente.apellido }}</td>
+                                <td>{{ docente.cedula }}</td>
+                                <td>{{ docente.especialidad|default:'No especificado' }}</td>
+                                <td>{{ docente.carga_horaria }}</td>
+                            </tr>
+                        {% empty %}
+                            <tr><td colspan="4">No se encontraron docentes.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% if page_obj.paginator.num_pages > 1 %}
+                    <nav class="admin-pagination" aria-label="Paginación de resultados de docentes">
+                        {% if page_obj.has_previous %}<a class="button" href="?page={{ page_obj.previous_page_number }}&q={{ query|urlencode }}">Anterior</a>{% endif %}
+                        <span>Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span>
+                        {% if page_obj.has_next %}<a class="button" href="?page={{ page_obj.next_page_number }}&q={{ query|urlencode }}">Siguiente</a>{% endif %}
+                    </nav>
+                {% endif %}
+        </section>
+
+        <div class="admin-summary-grid registry-summary" aria-label="Resumen de docentes">
+            <div class="admin-summary-card admin-summary-card--blue">
+                <span>Registrados en el sistema</span>
+                <strong>{{ total_registrados }}</strong>
+                <p>Total de docentes registrados.</p>
+            </div>
+            <div class="admin-summary-card admin-summary-card--green">
+                <span>Coincidencias en la lista</span>
+                <strong data-registry-match-count>{{ total_en_lista }}</strong>
+                <p><span data-registry-match-percent>{{ porcentaje_en_lista }}</span>% del total registrado</p>
+                <div class="registry-count-track" role="img" data-registry-match-track data-total="{{ total_registrados }}" aria-label="{{ porcentaje_en_lista }} por ciento del total">
+                    <span style="width: {{ porcentaje_en_lista }}%;"></span>
+                </div>
+            </div>
+        </div>
+
+        <section class="admin-actions-grid mt-4">
+            <a href="{% url 'admin_crear_docente' %}" class="button button--success">Crear Docente</a>
+            <a href="{% url 'admin_estudiantes' %}" class="button">Estudiantes</a>
+            {% if request.user.empleado.cargo == 'DIRECTORA' or request.user.empleado.cargo == 'SUBDIRECTORA' %}
+                <a href="{% url 'admin_representantes' %}" class="button">Representantes</a>
+            {% endif %}
+        </section>
+
+        <div id="registry-default-list" {% if query %}hidden{% endif %}>
+        <table class="admin-users-table">
+            <thead>
+                <tr>
+                    <th>Nombre</th>
+                    <th>Cédula</th>
+                    <th>Especialidad</th>
+                    <th>Carga Horaria</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for docente in docentes %}
+                    <tr>
+                        <td>{{ docente.nombre }} {{ docente.apellido }}</td>
+                        <td>{{ docente.cedula }}</td>
+                        <td>{{ docente.especialidad|default:'No especificado' }}</td>
+                        <td>{{ docente.carga_horaria }}</td>
+                        <td>
+                            <div class="admin-actions-inline">
+                                <button type="button" class="button admin-icon-action js-open-teacher-record" title="Ver expediente" aria-label="Ver expediente de {{ docente.nombre }} {{ docente.apellido }}" data-url="{% if docente.cedula %}{% url 'admin_expediente_docente' docente.cedula %}{% else %}{% url 'admin_expediente_docente_por_id' docente.pk %}{% endif %}?format=json">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"/><circle cx="12" cy="12" r="2.5"/></svg>
+                                </button>
+                                <a href="{% if docente.cedula %}{% url 'admin_docente_estudiantes' docente.cedula %}{% else %}{% url 'admin_docente_estudiantes_por_id' docente.pk %}{% endif %}" class="button admin-icon-action" title="Ver estudiantes asignados" aria-label="Ver estudiantes asignados a {{ docente.nombre }} {{ docente.apellido }}">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="10" cy="7" r="4"/><path d="M20 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                                </a>
+                                <a href="{% if docente.cedula %}{% url 'admin_asignar_estudiantes_docente' docente.cedula %}{% else %}{% url 'admin_asignar_estudiantes_docente_por_id' docente.pk %}{% endif %}" class="button admin-icon-action" title="Asignar grado y estudiantes" aria-label="Asignar grado y estudiantes a {{ docente.nombre }} {{ docente.apellido }}">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16M4 12h16M4 19h8"/><path d="M16 17h5M18.5 14.5v5"/></svg>
+                                </a>
+                                <a href="{% if docente.cedula %}{% url 'admin_editar_docente' docente.cedula %}{% else %}{% url 'admin_editar_docente_por_id' docente.pk %}{% endif %}" class="button admin-icon-action" title="Editar docente" aria-label="Editar docente {{ docente.nombre }} {{ docente.apellido }}">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L8 18l-4 1 1-4Z"/></svg>
+                                </a>
+                                <form method="post" action="{% if docente.cedula %}{% url 'admin_eliminar_docente' docente.cedula %}{% else %}{% url 'admin_eliminar_docente_por_id' docente.pk %}{% endif %}" class="inline-form">
+                                    {% csrf_token %}
+                                    <button type="submit" class="button button--danger admin-icon-action" title="Eliminar docente" aria-label="Eliminar docente {{ docente.nombre }} {{ docente.apellido }}">
+                                        <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v5M14 11v5"/></svg>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="5">No se encontraron docentes.</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% if not query and page_obj.paginator.num_pages > 1 %}
+            <nav class="admin-pagination" aria-label="Paginación de docentes">
+                {% if page_obj.has_previous %}<a class="button" href="?page={{ page_obj.previous_page_number }}{% if query %}&q={{ query|urlencode }}{% endif %}">Anterior</a>{% endif %}
+                <span>Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span>
+                {% if page_obj.has_next %}<a class="button" href="?page={{ page_obj.next_page_number }}{% if query %}&q={{ query|urlencode }}{% endif %}">Siguiente</a>{% endif %}
+            </nav>
+        {% endif %}
+        </div>
+    </div>
+
+    <div class="student-record-modal" id="teacherRecordModal" aria-hidden="true">
+        <div class="student-record-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="teacherRecordTitle">
+            <div class="student-record-modal__header">
+                <div>
+                    <p class="student-record-modal__eyebrow">Expediente docente</p>
+                    <h2 id="teacherRecordTitle">Información del docente</h2>
+                </div>
+            </div>
+            <div id="teacherRecordContent" class="student-record-modal__content"></div>
+            <div class="student-record-modal__actions">
+                <button type="button" class="button button--secondary" id="closeTeacherRecord">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="{% static 'js/registry_search.js' %}?v=1" defer></script>
+
+    <script>
+        (function () {
+            const modal = document.getElementById('teacherRecordModal');
+            const content = document.getElementById('teacherRecordContent');
+            const closeButton = document.getElementById('closeTeacherRecord');
+
+            function text(tag, value) {
+                const element = document.createElement(tag);
+                element.textContent = value;
+                return element;
+            }
+
+            function renderRecord(record) {
+                content.replaceChildren();
+                const identity = document.createElement('div');
+                identity.className = 'student-record-modal__identity';
+                identity.append(text('h3', record.nombre), text('p', 'Cédula: ' + record.cedula));
+                content.append(identity);
+
+                const details = document.createElement('div');
+                details.className = 'student-record-modal__details';
+                [['Teléfono', record.telefono], ['Carga horaria', record.carga_horaria]].forEach(([label, value]) => {
+                    const item = document.createElement('p');
+                    item.append(text('strong', label + ': '), text('span', value));
+                    details.append(item);
+                });
+                content.append(details);
+
+                const section = document.createElement('section');
+                section.append(text('h3', 'Horarios vinculados'));
+                const table = document.createElement('table');
+                table.className = 'admin-users-table';
+                table.innerHTML = '<thead><tr><th>Grado</th><th>Materia</th><th>Día</th><th>Horario</th></tr></thead><tbody></tbody>';
+                const body = table.querySelector('tbody');
+                const schedules = record.horarios.length ? record.horarios : [{grado: 'No hay horarios vinculados.', materia: '', dia: '', hora_inicio: '', hora_fin: ''}];
+                schedules.forEach((schedule) => {
+                    const row = document.createElement('tr');
+                    [schedule.grado, schedule.materia, schedule.dia, schedule.hora_inicio ? schedule.hora_inicio + ' - ' + schedule.hora_fin : ''].forEach((value) => row.append(text('td', value)));
+                    body.append(row);
+                });
+                section.append(table);
+                content.append(section);
+            }
+
+            document.querySelectorAll('.js-open-teacher-record').forEach((button) => {
+                button.addEventListener('click', async () => {
+                    content.textContent = 'Cargando información...';
+                    modal.classList.add('is-open');
+                    modal.setAttribute('aria-hidden', 'false');
+                    const response = await fetch(button.dataset.url);
+                    if (!response.ok) {
+                        content.textContent = 'No se pudo cargar la información del docente.';
+                        return;
+                    }
+                    renderRecord(await response.json());
+                });
+            });
+
+            closeButton.addEventListener('click', () => {
+                modal.classList.remove('is-open');
+                modal.setAttribute('aria-hidden', 'true');
+            });
+        })();
+    </script>
+{% endblock %}

@@ -1,0 +1,324 @@
+{% extends 'escuelaApp/base.html' %}
+{% load static %}
+
+{% block title %}Formulario de Empleado | Escuela{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/admin.css' %}?v=28">
+{% endblock %}
+
+{% block content %}
+    <div class="admin-panel-container">
+        <nav class="admin-breadcrumbs">
+            <a href="{% url 'home' %}">Inicio</a> › <a href="{% url 'admin_panel' %}">Admin</a> › <a href="{% url 'admin_personal' %}">Personal</a> › <span>{% if empleado %}Editar{% else %}Crear{% endif %}</span>
+        </nav>
+        <h1 class="admin-page-title">{% if empleado %}Editar Empleado{% else %}Crear Empleado{% endif %}</h1>
+
+        <div class="admin-card representative-form-shell">
+            <div class="progress-summary">
+                <div class="progress-summary__header">
+                    <span>Progreso del formulario</span>
+                    <strong id="progressPercent">0%</strong>
+                </div>
+                <div class="progress-bar" aria-label="Progreso del formulario">
+                    <span id="progressBarFill" class="progress-bar__fill"></span>
+                </div>
+            </div>
+
+            <div class="representative-form-legend">
+                <div class="representative-form-legend__item">
+                    <span class="legend-dot legend-dot--filled"></span>
+                    <span>Campo completo</span>
+                </div>
+                <div class="representative-form-legend__item">
+                    <span class="legend-dot legend-dot--empty"></span>
+                    <span>Campo pendiente</span>
+                </div>
+            </div>
+
+            <form method="post" class="admin-form" id="empleadoForm" novalidate>
+                {% csrf_token %}
+                {{ form.non_field_errors }}
+
+                <div class="form-section" data-section-title="Datos personales">
+                    <div class="form-section__header">
+                        <div>
+                            <span class="form-section__eyebrow">Sección 1</span>
+                            <h2>Datos personales</h2>
+                        </div>
+                        <span class="form-section__status">0/3</span>
+                    </div>
+
+                    <div class="admin-form-grid">
+                        <div class="form-field{% if form.first_name.errors %} has-error{% endif %}">
+                            <div class="field-header">
+                                {{ form.first_name.label_tag }}
+                                <span class="field-status-badge">Pendiente</span>
+                            </div>
+                            {{ form.first_name }}
+                            {{ form.first_name.errors }}
+                        </div>
+
+                        <div class="form-field{% if form.last_name.errors %} has-error{% endif %}">
+                            <div class="field-header">
+                                {{ form.last_name.label_tag }}
+                                <span class="field-status-badge">Pendiente</span>
+                            </div>
+                            {{ form.last_name }}
+                            {{ form.last_name.errors }}
+                        </div>
+
+                        <div class="form-field{% if form.cedula.errors %} has-error{% endif %}">
+                            <div class="field-header">
+                                {{ form.cedula.label_tag }}
+                                <span class="field-status-badge">Pendiente</span>
+                            </div>
+                            {{ form.cedula }}
+                            {{ form.cedula.errors }}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-section" data-section-title="Acceso y rol">
+                    <div class="form-section__header">
+                        <div>
+                            <span class="form-section__eyebrow">Sección 2</span>
+                            <h2>Acceso y rol</h2>
+                        </div>
+                        <span class="form-section__status">0/3</span>
+                    </div>
+
+                    <div class="admin-form-grid">
+                        <div class="form-field{% if form.email.errors %} has-error{% endif %}">
+                            <div class="field-header">
+                                {{ form.email.label_tag }}
+                                <span class="field-status-badge">Pendiente</span>
+                            </div>
+                            {{ form.email }}
+                            {{ form.email.errors }}
+                        </div>
+
+                        <div class="form-field{% if form.cargo.errors %} has-error{% endif %}">
+                            <div class="field-header">
+                                {{ form.cargo.label_tag }}
+                                <span class="field-status-badge">Pendiente</span>
+                            </div>
+                            {{ form.cargo }}
+                            {{ form.cargo.errors }}
+                        </div>
+
+                        <div class="form-field{% if form.telefono.errors %} has-error{% endif %}">
+                            <div class="field-header">
+                                {{ form.telefono.label_tag }}
+                                <span class="field-status-badge">Opcional</span>
+                            </div>
+                            {{ form.telefono }}
+                            {{ form.telefono.errors }}
+                        </div>
+
+                        <div class="form-field{% if form.acepta_notificaciones_whatsapp.errors %} has-error{% endif %}">
+                            <div class="field-header">
+                                {{ form.acepta_notificaciones_whatsapp.label_tag }}
+                                <span class="field-status-badge">Opcional</span>
+                            </div>
+                            {{ form.acepta_notificaciones_whatsapp }}
+                            {{ form.acepta_notificaciones_whatsapp.errors }}
+                        </div>
+
+                        <div class="form-field{% if form.telegram_chat_id.errors %} has-error{% endif %}">
+                            <div class="field-header">
+                                {{ form.telegram_chat_id.label_tag }}
+                                <span class="field-status-badge">Opcional</span>
+                            </div>
+                            {{ form.telegram_chat_id }}
+                            <small class="admin-form-hint">La persona debe iniciar el bot de la escuela para obtener su chat ID.</small>
+                            {{ form.telegram_chat_id.errors }}
+                        </div>
+
+                        <div class="form-field{% if form.notificar_contactos_telegram.errors %} has-error{% endif %}">
+                            <div class="field-header">
+                                {{ form.notificar_contactos_telegram.label_tag }}
+                                <span class="field-status-badge">Opcional</span>
+                            </div>
+                            {{ form.notificar_contactos_telegram }}
+                            {{ form.notificar_contactos_telegram.errors }}
+                        </div>
+
+                        <div class="form-field{% if form.password.errors %} has-error{% endif %}">
+                            <div class="field-header">
+                                {{ form.password.label_tag }}
+                                <span class="field-status-badge">{% if empleado %}Opcional{% else %}Pendiente{% endif %}</span>
+                            </div>
+                            {{ form.password }}
+                            {% if empleado %}<small class="admin-form-hint">Déjala vacía para conservar la contraseña actual. Si escribes una nueva, se actualizará al guardar.</small>{% endif %}
+                            {{ form.password.errors }}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="admin-form-actions">
+                    <button type="submit" class="button button--success">Guardar empleado</button>
+                    <button type="button" class="button button--secondary" id="reviewFieldsBtn">Revisar campos</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="field-modal-backdrop" id="fieldModalBackdrop" aria-hidden="true">
+        <div class="field-modal" role="dialog" aria-modal="true" aria-labelledby="fieldModalTitle">
+            <div class="field-modal__header">
+                <div class="field-modal__icon" id="fieldModalIcon">!</div>
+                <div>
+                    <p class="field-modal__eyebrow">Validación del formulario</p>
+                    <h3 id="fieldModalTitle">Advertencia</h3>
+                </div>
+            </div>
+            <p id="fieldModalMessage">Revisa este campo antes de continuar.</p>
+            <div class="field-modal__actions">
+                <button type="button" class="button button--secondary" id="closeModalBtn">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        (function () {
+            const form = document.getElementById('empleadoForm');
+            const modal = document.getElementById('fieldModalBackdrop');
+            const modalTitle = document.getElementById('fieldModalTitle');
+            const modalMessage = document.getElementById('fieldModalMessage');
+            const modalIcon = document.getElementById('fieldModalIcon');
+            const closeModalBtn = document.getElementById('closeModalBtn');
+            const reviewFieldsBtn = document.getElementById('reviewFieldsBtn');
+
+            function getFieldValue(field) {
+                if (!field) return '';
+                if (field.type === 'checkbox') return field.checked;
+                return (field.value || '').trim();
+            }
+
+            function getFieldLabel(field) {
+                const label = field.closest('.form-field')?.querySelector('label')?.textContent?.trim();
+                return label ? label.replace(/\*$/, '').trim() : (field.name || 'Este campo');
+            }
+
+            function updateFieldStatus(field) {
+                const wrapper = field.closest('.form-field');
+                if (!wrapper) return;
+                const value = getFieldValue(field);
+                const isFilled = value !== '' && value !== false;
+                const badge = wrapper.querySelector('.field-status-badge');
+                wrapper.classList.toggle('is-filled', isFilled);
+                wrapper.classList.toggle('is-empty', !isFilled);
+                if (badge) badge.textContent = isFilled ? 'Listo' : 'Pendiente';
+            }
+
+            function updateSectionStatus(section) {
+                const fields = Array.from(section.querySelectorAll('input, select, textarea'));
+                const total = fields.length;
+                const filled = fields.filter((field) => {
+                    const value = getFieldValue(field);
+                    return value !== '' && value !== false;
+                }).length;
+                const counter = section.querySelector('.form-section__status');
+                if (counter) counter.textContent = filled + '/' + total;
+            }
+
+            function updateProgressBar() {
+                const allFields = Array.from(form.querySelectorAll('input, select, textarea'));
+                const totalFields = allFields.length;
+                const filledFields = allFields.filter((field) => {
+                    const value = getFieldValue(field);
+                    return value !== '' && value !== false;
+                }).length;
+                const percent = totalFields ? Math.round((filledFields / totalFields) * 100) : 0;
+                const bar = document.getElementById('progressBarFill');
+                const percentLabel = document.getElementById('progressPercent');
+                if (bar) bar.style.width = percent + '%';
+                if (percentLabel) percentLabel.textContent = percent + '%';
+            }
+
+            function openModal(type, message) {
+                modalTitle.textContent = type === 'warning' ? 'Advertencia' : 'Campo completado';
+                modalMessage.textContent = message;
+                modalIcon.textContent = type === 'warning' ? '!' : '✓';
+                modalIcon.style.background = type === 'warning' ? '#fff3cd' : '#dcfce7';
+                modalIcon.style.color = type === 'warning' ? '#a16207' : '#166534';
+                modal.classList.add('is-open');
+                modal.setAttribute('aria-hidden', 'false');
+            }
+
+            function closeModal() {
+                modal.classList.remove('is-open');
+                modal.setAttribute('aria-hidden', 'true');
+            }
+
+            function validateField(field) {
+                const value = getFieldValue(field);
+                const label = getFieldLabel(field);
+                if (value === '' || value === false) {
+                    if (!field.required) return true;
+                    openModal('warning', 'El campo "' + label + '" está vacío. Revísalo antes de continuar.');
+                    return false;
+                }
+                if (field.name === 'cedula' && !/^(?:V-\d{7,8}|E-\d{6,9})$/.test(value)) {
+                    openModal('warning', 'Venezolana: 7 u 8 dígitos. Extranjera: de 6 a 9 dígitos.');
+                    return false;
+                }
+                if (field.name === 'password' && value.length < 8) {
+                    openModal('warning', 'La contraseña debe tener al menos 8 caracteres.');
+                    return false;
+                }
+                openModal('success', 'El campo "' + label + '" está completo y listo para guardar.');
+                return true;
+            }
+
+            document.querySelectorAll('#empleadoForm input, #empleadoForm select, #empleadoForm textarea').forEach((field) => {
+                updateFieldStatus(field);
+                field.addEventListener('blur', () => {
+                    if (field.tagName === 'SELECT') return;
+                    validateField(field);
+                });
+                field.addEventListener('input', () => {
+                    updateFieldStatus(field);
+                    document.querySelectorAll('.form-section').forEach(updateSectionStatus);
+                    updateProgressBar();
+                });
+                field.addEventListener('change', () => {
+                    updateFieldStatus(field);
+                    document.querySelectorAll('.form-section').forEach(updateSectionStatus);
+                    updateProgressBar();
+                });
+            });
+
+            form.addEventListener('submit', function (event) {
+                const fields = Array.from(form.querySelectorAll('input, select, textarea'));
+                const emptyFields = fields.filter((field) => field.required && (getFieldValue(field) === '' || getFieldValue(field) === false));
+                if (emptyFields.length > 0) {
+                    event.preventDefault();
+                    const firstEmpty = emptyFields[0];
+                    openModal('warning', 'Hay campos pendientes. Revisa primero: "' + getFieldLabel(firstEmpty) + '".');
+                    firstEmpty.focus();
+                }
+            });
+
+            reviewFieldsBtn.addEventListener('click', () => {
+                const allFields = Array.from(form.querySelectorAll('input, select, textarea'));
+                const emptyField = allFields.find((field) => field.required && (getFieldValue(field) === '' || getFieldValue(field) === false));
+                if (emptyField) {
+                    openModal('warning', 'Aún falta completar: "' + getFieldLabel(emptyField) + '".');
+                    emptyField.focus();
+                    return;
+                }
+                openModal('success', 'Todos los campos del formulario están completos y listos para guardar.');
+            });
+
+            closeModalBtn.addEventListener('click', closeModal);
+            modal.addEventListener('click', (event) => {
+                if (event.target === modal) closeModal();
+            });
+
+            document.querySelectorAll('.form-section').forEach(updateSectionStatus);
+            updateProgressBar();
+        })();
+    </script>
+{% endblock %}

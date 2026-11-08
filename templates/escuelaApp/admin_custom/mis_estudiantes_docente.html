@@ -1,0 +1,94 @@
+{% extends 'escuelaApp/base.html' %}
+{% load static %}
+
+{% block title %}Mis estudiantes | Escuela{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/admin.css' %}">
+{% endblock %}
+
+{% block content %}
+    <div class="admin-panel-container">
+        <nav class="admin-breadcrumbs">
+            <a href="{% url 'home' %}">Inicio</a> › <a href="{% url 'admin_panel' %}">Admin</a> › <span>Mis estudiantes</span>
+        </nav>
+
+        <div class="admin-card" style="margin-bottom: 1.5rem;">
+            <div class="admin-card-header">
+                <h1 class="admin-page-title" style="margin: 0;">Estudiantes a mi cargo</h1>
+            </div>
+            <div class="admin-card-body">
+                <p class="admin-card-metric" style="margin: 0;">
+                    Docente: <strong>{{ docente.nombre }} {{ docente.apellido }}</strong>
+                </p>
+                <p class="admin-card-metric" style="margin: 8px 0 0;">
+                    Grupos asignados: <strong>{{ grupos_grado|length }}</strong>
+                    <span aria-hidden="true"> · </span>
+                    Estudiantes a cargo: <strong>{{ total_estudiantes }}</strong>
+                </p>
+                <div class="admin-card-actions" style="margin-top: 1rem;">
+                    <a href="{% url 'admin_registro_academico' %}" class="button button--success">Registrar notas por lapso</a>
+                    <a href="{% url 'admin_resumenes_asistencia_lapso' %}" class="button">Registrar asistencia por lapso</a>
+                </div>
+            </div>
+        </div>
+
+        {% if grupos_grado %}
+            {% for grupo in grupos_grado %}
+                <section class="admin-card" aria-labelledby="grado-{{ forloop.counter }}">
+                    <div class="admin-card-header">
+                        <h2 class="admin-page-title" id="grado-{{ forloop.counter }}" style="margin: 0;">{{ grupo.nombre }}</h2>
+                        <span class="admin-card-metric">{{ grupo.estudiantes|length }} estudiante{{ grupo.estudiantes|length|pluralize:"s" }}</span>
+                    </div>
+                    <div class="admin-card-body">
+                        <p class="admin-card-metric" style="margin: 0 0 1rem;">
+                            Materias a cargo: <strong>{{ grupo.materias|join:', ' }}</strong>
+                        </p>
+                        {% if grupo.estudiantes %}
+                            <div style="overflow-x: auto;">
+                                <table class="admin-users-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Nombre</th>
+                                            <th>Cédula</th>
+                                            <th>Sección</th>
+                                            <th>Representante</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for estudiante in grupo.estudiantes %}
+                                            <tr>
+                                                <td>{{ estudiante.nombre }} {{ estudiante.apellido }}</td>
+                                                <td>{{ estudiante.cedula }}</td>
+                                                <td>{{ estudiante.seccion|default:'Sin sección' }}</td>
+                                                <td>
+                                                    {% if estudiante.representante %}
+                                                        {{ estudiante.representante.nombre }} {{ estudiante.representante.apellido }}
+                                                    {% else %}
+                                                        Sin representante
+                                                    {% endif %}
+                                                </td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        {% else %}
+                            <p class="admin-card-metric" style="margin: 0;">Aún no hay estudiantes registrados en este grado.</p>
+                        {% endif %}
+                    </div>
+                </section>
+            {% endfor %}
+        {% else %}
+            <div class="admin-card">
+                <div class="admin-card-body">
+                    <p class="admin-card-metric" style="margin: 0;">No tienes materias asignadas en los horarios.</p>
+                </div>
+            </div>
+        {% endif %}
+
+        <div class="admin-card-actions" style="margin-top: 1.5rem;">
+            <a href="{% url 'admin_panel' %}" class="button">Volver al panel</a>
+        </div>
+    </div>
+{% endblock %}

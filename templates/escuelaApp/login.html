@@ -1,0 +1,140 @@
+{% extends 'escuelaApp/base.html' %}
+{% load static %}
+
+{% block title %}Iniciar sesión | Escuela{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/login.css' %}">
+{% endblock %}
+
+{% block body_class %}login-page-body{% endblock %}
+{% block main_class %}login-page-main{% endblock %}
+
+{% block content %}
+    <div class="login-page">
+        <div class="login-card">
+            <h1>Iniciar sesión</h1>
+
+            {% if messages %}
+                {% if timeout_message %}
+                    <div class="timeout-modal-backdrop is-open" id="timeout-modal" aria-live="assertive">
+                        <div class="timeout-modal" role="alertdialog" aria-modal="true" aria-labelledby="timeout-modal-title">
+                            <div class="timeout-modal__icon" aria-hidden="true">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                    <circle cx="12" cy="13" r="7"></circle>
+                                    <path d="M12 9v4l2.5 2.5"></path>
+                                    <path d="M12 2v2"></path>
+                                    <path d="M4.93 4.93l1.41 1.41"></path>
+                                    <path d="M19.07 4.93l-1.41 1.41"></path>
+                                </svg>
+                            </div>
+                            <p class="timeout-modal__eyebrow">Sesión finalizada</p>
+                            <h2 id="timeout-modal-title">Se ha cerrado la sesión</h2>
+                            <p class="timeout-modal__message">{{ timeout_message }}</p>
+                            <button type="button" class="button primary-button timeout-modal__button" data-close-timeout-modal>Entendido</button>
+                        </div>
+                    </div>
+                {% else %}
+                    <div class="message-list login-message-list">
+                        {% for message in messages %}
+                            <div class="message-box{% if message.tags %} {{ message.tags }}{% endif %}" role="alert">{{ message }}</div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            {% endif %}
+
+            {% if lockout_seconds %}
+                <div class="timeout-modal-backdrop is-open" id="login-lockout-modal" aria-live="assertive">
+                    <div class="timeout-modal" role="alertdialog" aria-modal="true" aria-labelledby="lockout-modal-title">
+                        <div class="timeout-modal__icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="13" r="7"></circle>
+                                <path d="M12 9v4l2.5 2.5"></path>
+                                <path d="M12 2v2"></path>
+                                <path d="M4.93 4.93l1.41 1.41"></path>
+                                <path d="M19.07 4.93l-1.41 1.41"></path>
+                            </svg>
+                        </div>
+                        <p class="timeout-modal__eyebrow">Demasiados intentos</p>
+                        <h2 id="lockout-modal-title">Espera para volver a intentar</h2>
+                        <p class="timeout-modal__message">Se realizaron 3 intentos sin éxito. Podrás ingresar nuevamente en</p>
+                        <p class="login-lockout-countdown" id="login-lockout-countdown" data-unlock-at-ms="{{ lockout_until }}">{{ lockout_seconds }}</p>
+                        <p class="timeout-modal__message">segundos</p>
+                    </div>
+                </div>
+            {% endif %}
+
+            {% if blocked_tab %}
+                <div class="message-box warning" role="alert">
+                    La cuenta está activa en otra sesión. Por favor, espere a que la sesión se cierre para volver a ingresar.
+                </div>
+            {% endif %}
+
+            <form method="post" class="login-form" autocomplete="off">
+                {% csrf_token %}
+                <input type="hidden" name="next" value="{{ next }}">
+                <div class="form-group">
+                    <label for="id_username">Usuario</label>
+                    <input id="id_username" type="text" name="username" autocomplete="off" required autofocus>
+                </div>
+                <div class="form-group">
+                    <label for="id_password">Contraseña</label>
+                    <div class="password-field">
+                        <input id="id_password" type="password" name="password" autocomplete="off" required>
+                        <button id="toggle-password-visibility" class="password-visibility-toggle" type="button" aria-controls="id_password" aria-label="Mostrar contraseña" aria-pressed="false">Mostrar</button>
+                    </div>
+                </div>
+                <button class="button primary-button" type="submit">Ingresar</button>
+            </form>
+            <a class="login-forgot-link" href="{% url 'forgot_password' %}">¿Olvidaste tu contraseña?</a>
+        </div>
+    </div>
+{% endblock %}
+
+{% block extra_js %}
+    <script>
+        const passwordInput = document.getElementById('id_password');
+        const passwordToggle = document.getElementById('toggle-password-visibility');
+
+        const timeoutModal = document.getElementById('timeout-modal');
+        if (timeoutModal) {
+            document.body.classList.add('modal-open');
+            const closeButton = timeoutModal.querySelector('[data-close-timeout-modal]');
+            const closeModal = () => {
+                document.body.classList.remove('modal-open');
+                timeoutModal.remove();
+            };
+
+            closeButton && closeButton.addEventListener('click', closeModal);
+            window.setTimeout(closeModal, 8000);
+        }
+
+        const lockoutModal = document.getElementById('login-lockout-modal');
+        if (lockoutModal) {
+            document.body.classList.add('modal-open');
+            const countdown = document.getElementById('login-lockout-countdown');
+            const submitButton = document.querySelector('.login-form button[type="submit"]');
+            const unlockAt = Number(countdown.dataset.unlockAtMs);
+            if (submitButton) submitButton.disabled = true;
+
+            const countdownTimer = window.setInterval(function () {
+                const remainingSeconds = Math.max(0, Math.ceil((unlockAt - Date.now()) / 1000));
+                countdown.textContent = String(remainingSeconds);
+                if (remainingSeconds === 0) {
+                    window.clearInterval(countdownTimer);
+                    lockoutModal.remove();
+                    document.body.classList.remove('modal-open');
+                    if (submitButton) submitButton.disabled = false;
+                }
+            }, 1000);
+        }
+
+        passwordToggle.addEventListener('click', function () {
+            const shouldShow = passwordInput.type === 'password';
+            passwordInput.type = shouldShow ? 'text' : 'password';
+            passwordToggle.textContent = shouldShow ? 'Ocultar' : 'Mostrar';
+            passwordToggle.setAttribute('aria-label', shouldShow ? 'Ocultar contraseña' : 'Mostrar contraseña');
+            passwordToggle.setAttribute('aria-pressed', String(shouldShow));
+        });
+    </script>
+{% endblock %}

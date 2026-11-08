@@ -1,0 +1,69 @@
+{% extends 'escuelaApp/base.html' %}
+{% load static %}
+
+{% block title %}Control de Horarios | Escuela{% endblock %}
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/admin.css' %}?v=13">
+{% endblock %}
+
+{% block content %}
+<div class="admin-panel-container">
+    <h1 class="admin-page-title">Planificación y Control de Horarios</h1>
+    <div class="admin-info-panel" style="display: flex; justify-content: space-between; align-items: center; background: #f0f4f8; padding:12px; border-radius:8px;">
+        <form method="GET" action="{% url 'gestionar_horarios' %}" id="filtro-ano-form" style="display: flex; gap: 10px; align-items: center;">
+            <label for="ano" style="margin: 0; font-weight: bold; color: #003366;">Seleccionar Grado:</label>
+            <select name="ano" id="ano" onchange="document.getElementById('filtro-ano-form').submit();" style="width: auto; padding: 8px 15px;">
+                {% for code, label in anos_disponibles %}
+                    <option value="{{ code }}" {% if code == ano_seleccionado %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+            <button type="submit" class="button button--primary" formaction="{% url 'exportar_horarios_pdf' %}">Exportar horario PDF</button>
+        </form>
+        {% if request.user.empleado.cargo != 'DOCENTE' and request.user.empleado.cargo != 'PROFESOR' %}
+            <a href="{% url 'crear_horario' %}" class="button button--success">+ Asignar Nuevo Bloque</a>
+        {% endif %}
+    </div>
+
+    {% for grupo in grupos_horarios %}
+        <section class="horario-grado-panel" style="margin-top: 22px;">
+            <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:10px;">
+                <h2 style="margin:0; color:#003366;">{{ grupo.name }}</h2>
+                <span class="admin-form-hint">Horario semanal del grado</span>
+            </div>
+            <div class="grid-horarios-semanal" style="display: grid; grid-template-columns: repeat(5, minmax(170px, 1fr)); gap: 15px; width: 100%; overflow-x: auto;">
+                {% for dia in grupo.dias %}
+                    <div class="dia-columna" style="background: white; border: 1px solid #d9e2ec; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.02); min-width: 170px;">
+                        <div class="dia-header" style="background: #003366; color: white; text-align: center; padding: 10px; font-weight: bold;">{{ dia.name }}</div>
+                        <div class="dia-bloques" style="padding: 10px; display: grid; gap: 10px; min-height: 90px;">
+                            {% for h in dia.items %}
+                                <div class="bloque-tarjeta" style="background: #eef2f5; border-left: 4px solid #2d6cdf; padding: 10px; border-radius: 6px; font-size: 0.9rem;">
+                                    <span style="font-weight: bold; color: #102a43; display: block;">{{ h.materia }}</span>
+                                    <small style="color: #475569; display: block; margin: 4px 0;">Prof: {{ h.docente.nombre }} {{ h.docente.apellido }}</small>
+                                    <span style="font-size: 0.8rem; background: #cbd5e1; padding: 2px 6px; border-radius: 4px; display: inline-block;">{{ h.hora_inicio|time:'H:i' }} - {{ h.hora_fin|time:'H:i' }}</span>
+                                    {% if request.user.empleado.cargo != 'DOCENTE' and request.user.empleado.cargo != 'PROFESOR' %}
+                                        <div class="admin-actions-inline horario-block-actions">
+                                            <a href="{% url 'editar_horario' h.pk %}" class="button admin-icon-action" title="Editar bloque" aria-label="Editar {{ h.materia }} de {{ grupo.name }}, {{ dia.name }}">
+                                                <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L8 18l-4 1 1-4Z"/></svg>
+                                            </a>
+                                            <form method="post" action="{% url 'eliminar_horario' h.pk %}" class="inline-form" onsubmit="return confirm('¿Eliminar este bloque y liberar el espacio?');">
+                                                {% csrf_token %}
+                                                <button type="submit" class="button button--danger admin-icon-action" title="Eliminar bloque" aria-label="Eliminar {{ h.materia }} de {{ grupo.name }}, {{ dia.name }}">
+                                                    <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v5M14 11v5"/></svg>
+                                                </button>
+                                            </form>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            {% empty %}
+                                <p style="color: #64748b; margin:0;">Sin clases</p>
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </section>
+    {% empty %}
+        <p class="admin-form-hint">No hay horarios registrados para este grado.</p>
+    {% endfor %}
+</div>
+{% endblock %}

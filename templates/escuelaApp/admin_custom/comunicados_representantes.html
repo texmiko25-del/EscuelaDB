@@ -1,0 +1,95 @@
+{% extends 'escuelaApp/base.html' %}
+{% load static %}
+
+{% block title %}Comunicados | Escuela{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/admin.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="admin-panel-container">
+    <nav class="admin-breadcrumbs">
+        <a href="{% url 'admin_panel' %}">Admin</a> ›
+        <a href="{% url 'admin_representantes' %}">Representantes</a> ›
+        <span>Comunicados</span>
+    </nav>
+    <h1 class="admin-page-title">Comunicados a representantes y docentes</h1>
+
+    <section class="admin-card admin-card--padded">
+        <form method="post" class="admin-form">
+            {% csrf_token %}
+            {% if form.non_field_errors %}<div class="admin-form-alert">{{ form.non_field_errors }}</div>{% endif %}
+            <div class="admin-form-row{% if form.asunto.errors %} has-error{% endif %}">
+                {{ form.asunto.label_tag }}
+                {{ form.asunto }}
+                {{ form.asunto.errors }}
+            </div>
+            <div class="admin-form-row{% if form.mensaje.errors %} has-error{% endif %}">
+                {{ form.mensaje.label_tag }}
+                {{ form.mensaje }}
+                {{ form.mensaje.errors }}
+            </div>
+            <fieldset class="admin-form-row{% if form.representantes.errors %} has-error{% endif %}">
+                <legend>Representantes</legend>
+                {% if form.representantes.field.queryset %}
+                    <div class="admin-form-grid">
+                        {% for option in form.representantes %}
+                            <label class="admin-form-row">
+                                {{ option.tag }}
+                                <span>{{ option.choice_label }}</span>
+                            </label>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p>No hay representantes con correo registrado.</p>
+                {% endif %}
+                {{ form.representantes.errors }}
+            </fieldset>
+            <fieldset class="admin-form-row{% if form.docentes.errors %} has-error{% endif %}">
+                <legend>{{ form.docentes.label }}</legend>
+                {% if form.docentes.field.queryset %}
+                    <div class="admin-form-grid">
+                        {% for option in form.docentes %}
+                            <label class="admin-form-row">
+                                {{ option.tag }}
+                                <span>{{ option.choice_label }}</span>
+                            </label>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p>No hay docentes o profesores activos con correo registrado.</p>
+                {% endif %}
+                {{ form.docentes.errors }}
+            </fieldset>
+            <p class="admin-form-hint">Puedes seleccionar representantes, docentes o ambos. Cada persona recibe un correo individual; las demás direcciones no se comparten.</p>
+            <div class="admin-form-actions">
+                <button type="submit" class="button button--success">Enviar comunicado</button>
+                <a class="button button--secondary" href="{% url 'admin_representantes' %}">Volver a representantes</a>
+            </div>
+        </form>
+    </section>
+
+    <section class="admin-card admin-card--padded">
+        <h2 class="admin-section-title">Historial de comunicados</h2>
+        <div class="admin-table-wrapper">
+            <table class="admin-users-table">
+                <thead><tr><th>Fecha</th><th>Asunto</th><th>Enviados</th><th>Con error</th><th>Creado por</th></tr></thead>
+                <tbody>
+                    {% for comunicado in comunicados %}
+                    <tr>
+                        <td>{{ comunicado.creado_en|date:'d/m/Y H:i' }}</td>
+                        <td>{{ comunicado.asunto }}</td>
+                        <td>{{ comunicado.entregas_exitosas }}</td>
+                        <td>{{ comunicado.entregas_fallidas }}</td>
+                        <td>{{ comunicado.creado_por.get_full_name|default:comunicado.creado_por.username }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="5">Todavía no hay comunicados enviados.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+</div>
+{% endblock %}

@@ -1,0 +1,77 @@
+{% extends 'escuelaApp/base.html' %}
+{% load static %}
+
+{% block title %}Registrar Asignación | Escuela{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/admin.css' %}">
+{% endblock %}
+
+{% block content %}
+    <div class="admin-panel-container">
+        <nav class="admin-breadcrumbs">
+            <a href="{% url 'home' %}">Inicio</a> › <a href="{% url 'admin_panel' %}">Admin</a> › <span>Registrar asignación</span>
+        </nav>
+        <div class="admin-card">
+            <div class="admin-form-hero">
+                <h1 class="admin-page-title">Registrar Asignación</h1>
+                <p class="admin-form-help">Seleccione el estudiante, el docente y la materia para vincularlos automáticamente en el sistema.</p>
+            </div>
+            <form method="post" class="admin-form">
+                {% csrf_token %}
+                {{ form.non_field_errors }}
+                <div class="admin-form-grid">
+                    <div class="admin-form-row">
+                        {{ form.estudiante.label_tag }}
+                        {{ form.estudiante }}
+                        <small class="admin-form-hint">Se muestran estudiantes registrados con su cédula.</small>
+                        {{ form.estudiante.errors }}
+                    </div>
+                    <div class="admin-form-row">
+                        {{ form.docente.label_tag }}
+                        {{ form.docente }}
+                        <small class="admin-form-hint">Se muestran docentes con cargo activo. Si tienen especialidad registrada, aparecerá junto al nombre.</small>
+                        {{ form.docente.errors }}
+                    </div>
+                </div>
+                <div class="admin-form-grid">
+                    <div class="admin-form-row">
+                        {{ form.area.label_tag }}
+                        {{ form.area }}
+                        <small class="admin-form-hint">Ejemplo: Matemáticas, Lengua, Ciencias. Seleccione una asignatura del listado.</small>
+                        {{ form.area.errors }}
+                    </div>
+                    <datalist id="subject-list">
+                        <option value="Matemáticas">
+                        <option value="Inglés">
+                        <option value="Lengua">
+                        <option value="Castellano">
+                        <option value="Biología">
+                        <option value="Ciencias Naturales">
+                        <option value="Ciencias Sociales">
+                        <option value="Historia">
+                        <option value="Geografía">
+                        <option value="Educación Física">
+                        <option value="Educación Artística">
+                        <option value="Música">
+                        <option value="Tecnología">
+                        <option value="Computación">
+                        <option value="Valores">
+                        <option value="Ética">
+                        <option value="Medio Ambiente">
+                    </datalist>
+                    <div class="admin-form-row">
+                        {{ form.periodo.label_tag }}
+                        {{ form.periodo }}
+                        <small class="admin-form-hint">Formato esperado: YYYY-YYYY.</small>
+                        {{ form.periodo.errors }}
+                    </div>
+                </div>
+                <div class="admin-form-actions">
+                    <button type="submit" class="button button--success">Registrar asignación</button>
+                    <a href="{% url 'admin_panel' %}" class="button button--secondary">Cancelar</a>
+                </div>
+            </form>
+        </div>
+    </div>
+{% endblock %}

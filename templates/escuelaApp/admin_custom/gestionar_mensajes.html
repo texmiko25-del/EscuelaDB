@@ -1,0 +1,189 @@
+{% extends 'escuelaApp/base.html' %}
+{% load static %}
+
+{% block title %}Mensajes de contacto | Escuela{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/admin.css' %}?v=12">
+{% endblock %}
+
+{% block content %}
+<section class="contact-messages">
+    <header class="contact-messages__header">
+        <div>
+            <p class="contact-messages__eyebrow">Comunicación con las familias</p>
+            <h1>Mensajes de contacto</h1>
+            <p>Revisa las consultas, consulta el contexto del representante y elige cómo responder.</p>
+        </div>
+        <a href="{% url 'admin_panel' %}" class="button contact-messages__back">Volver al panel</a>
+    </header>
+
+    <div class="contact-messages__summary" aria-label="Resumen de mensajes">
+        <span><strong>{{ page_obj.paginator.count }}</strong> mensajes en total</span>
+        <span>Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span>
+    </div>
+
+    <div class="contact-messages__table-wrap">
+        <table class="contact-messages__table">
+            <thead>
+                <tr>
+                    <th scope="col">Contacto</th>
+                    <th scope="col">Asunto y mensaje</th>
+                    <th scope="col">Recibido</th>
+                    <th scope="col">Estado</th>
+                    <th scope="col"><span class="sr-only">Acciones</span></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for m in mensajes %}
+                <tr>
+                    <td>
+                        <strong>{{ m.nombre }}</strong>
+                        <a href="mailto:{{ m.email }}">{{ m.email }}</a>
+                        <span class="contact-messages__channels">
+                            {% if m.telefono and m.acepta_whatsapp %}<span class="contact-chip contact-chip--whatsapp">WhatsApp autorizado</span>{% endif %}
+                            {% if m.telegram_chat_id %}<span class="contact-chip">Telegram</span>{% endif %}
+                        </span>
+                    </td>
+                    <td class="contact-messages__subject">
+                        <strong>{{ m.asunto|default:"Sin asunto" }}</strong>
+                        <span>{{ m.mensaje|truncatechars:110 }}</span>
+                    </td>
+                    <td>{{ m.fecha_enviado|date:"d/m/Y" }}<small>{{ m.fecha_enviado|date:"H:i" }}</small></td>
+                    <td>
+                        {% if m.leido %}
+                            <span class="contact-status contact-status--read">Leído</span>
+                        {% else %}
+                            <span class="contact-status contact-status--new">Nuevo</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <button type="button" class="button contact-messages__open" data-open-contact="contact-detail-{{ m.id }}">
+                            Ver detalle <span aria-hidden="true">↗</span>
+                        </button>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td class="contact-messages__empty" colspan="5">Todavía no hay mensajes de contacto.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {% if page_obj.has_other_pages %}
+    <nav class="contact-pagination" aria-label="Paginación de mensajes">
+        {% if page_obj.has_previous %}
+            <a href="?page={{ page_obj.previous_page_number }}">‹ Anterior</a>
+        {% else %}
+            <span class="is-disabled">‹ Anterior</span>
+        {% endif %}
+        <span>{{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>
+        {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}">Siguiente ›</a>
+        {% else %}
+            <span class="is-disabled">Siguiente ›</span>
+        {% endif %}
+    </nav>
+    {% endif %}
+</section>
+
+{% for m in mensajes %}
+<dialog class="contact-detail" id="contact-detail-{{ m.id }}" aria-labelledby="contact-title-{{ m.id }}">
+    <header class="contact-detail__header">
+        <div>
+            <span class="contact-messages__eyebrow">Detalle del contacto</span>
+            <h2 id="contact-title-{{ m.id }}">{{ m.asunto|default:"Consulta sin asunto" }}</h2>
+        </div>
+        <button type="button" class="contact-detail__close" data-close-contact aria-label="Cerrar detalle">×</button>
+    </header>
+
+    <div class="contact-detail__content">
+        <section class="contact-detail__contact" aria-label="Datos del contacto">
+            <div><span>Nombre</span><strong>{{ m.nombre }}</strong></div>
+            <div><span>Correo</span><a href="mailto:{{ m.email }}">{{ m.email }}</a></div>
+            <div><span>Teléfono</span><strong>{{ m.telefono|default:"No indicado" }}</strong></div>
+            <div><span>Recibido</span><strong>{{ m.fecha_enviado|date:"d/m/Y · H:i" }}</strong></div>
+        </section>
+
+        <section class="contact-detail__message">
+            <h3>Mensaje recibido</h3>
+            <p>{{ m.mensaje|linebreaksbr }}</p>
+        </section>
+
+        <section class="contact-detail__students">
+            <h3>Estudiantes relacionados</h3>
+            {% if m.estudiantes_relacionados %}
+                <p class="contact-detail__note">Coincidencia exacta con el correo registrado del representante. Confirma la identidad antes de enviar información estudiantil.</p>
+                <ul>
+                    {% for estudiante in m.estudiantes_relacionados %}
+                        <li><strong>{{ estudiante.nombre }} {{ estudiante.apellido }}</strong><span>{{ estudiante.grado }}</span></li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p class="contact-detail__note">No hay estudiantes asociados a este correo de contacto. Puedes redactar la información pertinente en la respuesta.</p>
+            {% endif %}
+        </section>
+
+        <form method="post" action="{% url 'admin_responder_mensaje' m.id %}" class="contact-reply-form">
+            {% csrf_token %}
+            <h3>Responder al representante</h3>
+            <label for="canal-{{ m.id }}">Enviar respuesta por</label>
+            <select id="canal-{{ m.id }}" name="canal" data-reply-channel required>
+                <option value="correo">Correo electrónico · {{ m.email }}</option>
+                {% if m.telefono and m.acepta_whatsapp %}
+                    <option value="whatsapp">WhatsApp · {{ m.telefono }}</option>
+                {% else %}
+                    <option value="whatsapp" disabled>WhatsApp · requiere teléfono y autorización</option>
+                {% endif %}
+                {% if m.telegram_chat_id %}
+                    <option value="telegram">Telegram</option>
+                {% endif %}
+            </select>
+            <label for="respuesta-{{ m.id }}">Respuesta e información para la familia</label>
+            <textarea id="respuesta-{{ m.id }}" name="respuesta" rows="5" maxlength="5000" data-reply-text required placeholder="Escribe aquí la respuesta o la información del estudiante que corresponda."></textarea>
+            <p class="contact-reply-form__hint" data-reply-hint>Correo: hasta 5000 caracteres. Incluye solo los datos necesarios y verifica el destinatario.</p>
+            <label class="contact-reply-form__confirm">
+                <input type="checkbox" name="confirmar_destinatario" required>
+                Confirmo que verifiqué el destinatario y que la información compartida es pertinente.
+            </label>
+            <button type="submit" class="button button--primary">Enviar respuesta</button>
+        </form>
+
+        <footer class="contact-detail__actions">
+            {% if not m.leido %}
+                <form method="post" action="{% url 'admin_marcar_mensaje_leido' m.id %}">
+                    {% csrf_token %}
+                    <button type="submit" class="button">Marcar como leído</button>
+                </form>
+            {% endif %}
+            <form method="post" action="{% url 'admin_eliminar_mensaje' m.id %}" onsubmit="return confirm('¿Eliminar este mensaje de contacto?');">
+                {% csrf_token %}
+                <button type="submit" class="button button--danger">Eliminar mensaje</button>
+            </form>
+        </footer>
+    </div>
+</dialog>
+{% endfor %}
+
+<script>
+    document.querySelectorAll('[data-open-contact]').forEach((button) => {
+        button.addEventListener('click', () => {
+            const dialog = document.getElementById(button.dataset.openContact);
+            if (dialog) dialog.showModal();
+        });
+    });
+
+    document.querySelectorAll('.contact-detail').forEach((dialog) => {
+        dialog.querySelector('[data-close-contact]').addEventListener('click', () => dialog.close());
+        dialog.querySelector('[data-reply-channel]').addEventListener('change', (event) => {
+            const textarea = dialog.querySelector('[data-reply-text]');
+            const hint = dialog.querySelector('[data-reply-hint]');
+            const channel = event.target.value;
+            const maxLength = channel === 'whatsapp' ? 1024 : channel === 'telegram' ? 4096 : 5000;
+            textarea.maxLength = maxLength;
+            if (textarea.value.length > maxLength) textarea.value = textarea.value.slice(0, maxLength);
+            hint.textContent = `${channel === 'whatsapp' ? 'WhatsApp: plantilla con variable, máximo 1024 caracteres.' : channel === 'telegram' ? 'Telegram: máximo 4096 caracteres.' : 'Correo: hasta 5000 caracteres.'} Incluye solo los datos necesarios y verifica el destinatario.`;
+        });
+    });
+</script>
+{% endblock %}

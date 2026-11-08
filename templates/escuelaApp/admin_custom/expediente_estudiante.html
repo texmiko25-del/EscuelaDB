@@ -1,0 +1,99 @@
+{% extends 'escuelaApp/base.html' %}
+{% load static %}
+
+{% block title %}Expediente de {{ estudiante.nombre }} | Escuela{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/admin.css' %}">
+{% endblock %}
+
+{% block content %}
+    <div class="admin-panel-container">
+        <nav class="admin-breadcrumbs">
+            <a href="{% url 'home' %}">Inicio</a> ›
+            <a href="{% url 'admin_panel' %}">Admin</a> ›
+            <a href="{% url 'admin_estudiantes' %}">Estudiantes</a> ›
+            <span>Expediente</span>
+        </nav>
+
+        <div class="admin-page-heading">
+            <div>
+                <p class="admin-eyebrow">Expediente escolar</p>
+                <h1 class="admin-page-title">{{ estudiante.nombre }} {{ estudiante.apellido }}</h1>
+                <p>Cédula escolar: <strong>{{ estudiante.cedula }}</strong> · Matrícula: <strong>{{ estudiante.matricula|default:'No asignada' }}</strong></p>
+            </div>
+            <a href="{% if estudiante.cedula %}{% url 'admin_editar_estudiante' estudiante.cedula %}{% else %}{% url 'admin_editar_estudiante_por_id' estudiante.pk %}{% endif %}" class="button">Editar estudiante</a>
+        </div>
+
+        <section class="admin-card">
+            <h2>Datos personales</h2>
+            <div class="admin-form-grid">
+                <p><strong>Fecha de nacimiento:</strong> {{ estudiante.fecha_nacimiento|default:'No especificada' }}</p>
+                <p><strong>Edad:</strong> {% if edad is not None %}{{ edad }} años{% else %}No especificada{% endif %}</p>
+                <p><strong>Sexo:</strong> {{ estudiante.get_sexo_display|default:'No especificado' }}</p>
+                <p><strong>Nacionalidad:</strong> {{ estudiante.nacionalidad|default:'No especificada' }}</p>
+                <p><strong>Grado:</strong> {{ estudiante.get_grado_display|default:estudiante.grado }}</p>
+                <p><strong>Sección:</strong> {{ estudiante.seccion|default:'No asignada' }}</p>
+                <p><strong>Teléfono:</strong> {{ estudiante.telefono|default:'No especificado' }}</p>
+                <p><strong>Ubicación:</strong> {{ estudiante.ubicacion|default:'No especificada' }}</p>
+                <p><strong>Representante:</strong> {{ estudiante.representante|default:'Sin representante' }}</p>
+            </div>
+        </section>
+
+        <section class="admin-card">
+            <h2>Notas académicas</h2>
+            <table class="admin-users-table">
+                <thead>
+                    <tr>
+                        <th>Área</th>
+                        <th>Período</th>
+                        <th>Evaluación</th>
+                        <th>Nota</th>
+                        <th>Porcentaje</th>
+                        <th>Estado</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for nota in notas %}
+                        <tr>
+                            <td>{{ nota.area }}</td>
+                            <td>{{ nota.periodo }}</td>
+                            <td>{{ nota.tipo_evaluacion|default:'No especificada' }}</td>
+                            <td>{{ nota.nota|default:'Pendiente' }}</td>
+                            <td>{{ nota.porcentaje|default:'Pendiente' }}{% if nota.porcentaje is not None %}%{% endif %}</td>
+                            <td>{{ nota.estado|default:'Pendiente' }}</td>
+                        </tr>
+                    {% empty %}
+                        <tr><td colspan="6">No hay notas registradas.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </section>
+
+        <section class="admin-card">
+            <h2>Asistencia</h2>
+            <table class="admin-users-table">
+                <thead>
+                    <tr>
+                        <th>Fecha</th>
+                        <th>Estado</th>
+                        <th>Observaciones</th>
+                        <th>Registrada por</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for asistencia in asistencias %}
+                        <tr>
+                            <td>{{ asistencia.fecha }}</td>
+                            <td>{{ asistencia.get_estado_display }}</td>
+                            <td>{{ asistencia.observaciones|default:'-' }}</td>
+                            <td>{{ asistencia.registrado_por|default:'Sistema' }}</td>
+                        </tr>
+                    {% empty %}
+                        <tr><td colspan="4">No hay asistencias registradas.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </section>
+    </div>
+{% endblock %}

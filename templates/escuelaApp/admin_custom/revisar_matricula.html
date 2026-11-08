@@ -1,0 +1,37 @@
+{% extends 'escuelaApp/base.html' %}
+{% load static %}
+
+{% block title %}Revisar matrícula | Escuela{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'css/admin.css' %}">{% endblock %}
+{% block content %}
+<div class="admin-panel-container">
+    <nav class="admin-breadcrumbs"><a href="{% url 'admin_panel' %}">Panel</a> › <a href="{% url 'subdireccion_solicitudes_matricula' %}">Solicitudes de matrícula</a> › <span>Revisión #{{ solicitud.pk }}</span></nav>
+    <header><p class="admin-page-kicker">{{ solicitud.get_estado_display }}</p><h1 class="admin-page-title">Revisar solicitud de matrícula</h1></header>
+
+    <div class="admin-panel-cards">
+        <section class="admin-card"><div class="admin-card-header"><h2>Estudiante</h2></div><div class="admin-card-body">
+            <p><strong>Nombre:</strong> {{ solicitud.estudiante_nombre }} {{ solicitud.estudiante_apellido }}</p><p><strong>Fecha de nacimiento:</strong> {{ solicitud.estudiante_fecha_nacimiento|date:'d/m/Y' }}</p><p><strong>Sexo:</strong> {{ solicitud.get_estudiante_sexo_display }}</p><p><strong>Grado solicitado:</strong> {{ solicitud.get_grado_display }}</p><p><strong>Partida:</strong> {{ solicitud.partida_nacimiento }}</p><p><strong>Teléfono:</strong> {{ solicitud.estudiante_telefono|default:'No indicado' }}</p><p><strong>Dirección:</strong> {{ solicitud.estudiante_ubicacion|default:'No indicada' }}</p>
+        </div></section>
+        <section class="admin-card"><div class="admin-card-header"><h2>Representante</h2></div><div class="admin-card-body">
+            <p><strong>Nombre:</strong> {{ solicitud.representante_nombre }} {{ solicitud.representante_apellido }}</p><p><strong>Cédula:</strong> {{ solicitud.representante_cedula }}</p><p><strong>Parentesco:</strong> {{ solicitud.representante_parentesco }}</p><p><strong>Teléfono:</strong> {{ solicitud.representante_telefono }}</p><p><strong>Correo:</strong> {{ solicitud.representante_email|default:'No indicado' }}</p><p><strong>Observaciones:</strong> {{ solicitud.observaciones_representante|default:'-' }}</p>
+        </div></section>
+    </div>
+
+    <section class="admin-card"><div class="admin-card-header"><h2>Documentos adjuntos</h2></div><div class="admin-card-body admin-card-actions">
+        <a class="button button--secondary" href="{% url 'subdireccion_descargar_documento' solicitud.pk 'representante' %}" target="_blank" rel="noopener">Documento del representante</a>
+        <a class="button button--secondary" href="{% url 'subdireccion_descargar_documento' solicitud.pk 'partida' %}" target="_blank" rel="noopener">Partida de nacimiento</a>
+    </div></section>
+
+    {% if solicitud.estado == 'PENDIENTE' %}
+        <form method="post" class="admin-form">
+            {% csrf_token %}
+            {{ form.non_field_errors }}
+            <div class="admin-form-row">{{ form.seccion.label_tag }}{{ form.seccion }}{{ form.seccion.errors }}<small>Selecciona la sección que se asignará al estudiante; así aparecerá en listas, asistencia y notas.</small></div>
+            <div class="admin-form-row"><label for="id_observaciones">Observaciones de revisión</label>{{ form.observaciones }}{{ form.observaciones.errors }}<small>Obligatorias para rechazar; opcionales para aprobar.</small></div>
+            <div class="admin-form-actions"><button class="button button--success" type="submit" name="accion" value="aprobar">Aprobar y matricular</button><button class="button button--danger" type="submit" name="accion" value="rechazar">Rechazar solicitud</button></div>
+        </form>
+    {% else %}
+        <section class="admin-card"><div class="admin-card-body"><p><strong>Revisada por:</strong> {{ solicitud.revisada_por|default:'-' }}</p><p><strong>Fecha:</strong> {{ solicitud.fecha_revision|date:'d/m/Y H:i'|default:'-' }}</p><p><strong>Observaciones:</strong> {{ solicitud.observaciones_revision|default:'-' }}</p>{% if solicitud.estudiante %}<p><strong>Estudiante registrado:</strong> {{ solicitud.estudiante.matricula }} - {{ solicitud.estudiante.grado }} / Sección {{ solicitud.estudiante.seccion }}</p>{% endif %}</div></section>
+    {% endif %}
+</div>
+{% endblock %}

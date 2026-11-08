@@ -1,0 +1,420 @@
+{% extends 'escuelaApp/base.html' %}
+{% load static %}
+
+{% block title %}Mi cuenta | Escuela{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/admin.css' %}?v=28">
+{% endblock %}
+
+{% block extra_js %}
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const form = document.getElementById('editAccountForm');
+            const usernameField = document.getElementById('id_username');
+            const steps = Array.from(form.querySelectorAll('.form-step'));
+            const previousButton = document.getElementById('previousStepBtn');
+            const nextButton = document.getElementById('nextStepBtn');
+            const saveButton = document.getElementById('saveAccountBtn');
+            const modal = document.getElementById('fieldModalBackdrop');
+            const modalTitle = document.getElementById('fieldModalTitle');
+            const modalMessage = document.getElementById('fieldModalMessage');
+            const modalIcon = document.getElementById('fieldModalIcon');
+            const emailLocal = document.getElementById('email_local');
+            const emailDomain = document.getElementById('email_domain');
+            const emailCustomDomain = document.getElementById('email_domain_custom');
+            const hiddenEmailField = document.getElementById('id_email');
+            let currentStep = 0;
+
+            usernameField.addEventListener('input', function () {
+                usernameField.value = usernameField.value.replace(/[^A-Za-z0-9_]/g, '');
+            });
+
+            function showStep(index) {
+                currentStep = Math.max(0, Math.min(index, steps.length - 1));
+                steps.forEach(function (step, stepIndex) {
+                    const active = stepIndex === currentStep;
+                    step.classList.toggle('is-active', active);
+                    step.style.display = active ? 'grid' : 'none';
+                });
+                previousButton.style.display = currentStep === 0 ? 'none' : 'inline-flex';
+                nextButton.style.display = currentStep === steps.length - 1 ? 'none' : 'inline-flex';
+                saveButton.style.display = currentStep === steps.length - 1 ? 'inline-flex' : 'none';
+            }
+
+            function valueOf(field) {
+                return (field?.value || '').trim();
+            }
+
+            function syncEmailField() {
+                let domain = emailDomain.value.trim();
+                if (domain === 'custom') {
+                    domain = emailCustomDomain.value.trim();
+                }
+                hiddenEmailField.value = emailLocal.value.trim() && domain
+                    ? emailLocal.value.trim() + '@' + domain
+                    : '';
+            }
+
+            function splitExistingEmail() {
+                const value = hiddenEmailField.value || '';
+                if (!value.includes('@')) return;
+
+                const [local, ...domainParts] = value.split('@');
+                const domain = domainParts.join('@');
+                emailLocal.value = local || '';
+
+                if (Array.from(emailDomain.options).some((option) => option.value === domain)) {
+                    emailDomain.value = domain;
+                    emailCustomDomain.style.display = 'none';
+                } else {
+                    emailDomain.value = 'custom';
+                    emailCustomDomain.value = domain;
+                    emailCustomDomain.style.display = 'block';
+                }
+            }
+
+            function valueOfWrapper(wrapper) {
+                return wrapper.querySelector('.email-split')
+                    ? valueOf(hiddenEmailField)
+                    : valueOf(wrapper.querySelector('input, select, textarea'));
+            }
+
+            function isWrapperValid(wrapper) {
+                if (wrapper.querySelector('.email-split')) {
+                    syncEmailField();
+                    const email = valueOf(hiddenEmailField);
+                    if (!email) return false;
+                    const validator = document.createElement('input');
+                    validator.type = 'email';
+                    validator.value = email;
+                    return validator.checkValidity();
+                }
+
+                const field = wrapper.querySelector('input, select, textarea');
+                return Boolean(valueOf(field)) && field.checkValidity();
+            }
+
+            function focusWrapper(wrapper) {
+                const field = wrapper.querySelector('.email-split')
+                    ? emailLocal
+                    : wrapper.querySelector('input, select, textarea');
+                field?.focus();
+            }
+
+            function openModal(type, message) {
+                modalTitle.textContent = type === 'success' ? 'Revisión completa' : 'Revisa tus datos';
+                modalMessage.textContent = message;
+                modalIcon.textContent = type === 'success' ? '✓' : '!';
+                modalIcon.style.background = type === 'success' ? '#dcfce7' : '#fff3cd';
+                modalIcon.style.color = type === 'success' ? '#166534' : '#a16207';
+                modal.classList.add('is-open');
+                modal.setAttribute('aria-hidden', 'false');
+                document.getElementById('closeModalBtn').focus();
+            }
+
+            function closeModal() {
+                modal.classList.remove('is-open');
+                modal.setAttribute('aria-hidden', 'true');
+            }
+
+            function updateField(wrapper) {
+                const filled = Boolean(valueOfWrapper(wrapper));
+                const optional = wrapper.dataset.optional === 'true';
+                const badge = wrapper.querySelector('.field-status-badge');
+                wrapper.classList.toggle('is-filled', filled);
+                wrapper.classList.toggle('is-empty', !filled && !optional);
+                if (badge) badge.textContent = filled ? 'Listo' : (optional ? 'Opcional' : 'Pendiente');
+            }
+
+            function updateProgress() {
+                const wrappers = Array.from(form.querySelectorAll('.form-field'));
+                wrappers.forEach(updateField);
+                const required = wrappers.filter((wrapper) => wrapper.dataset.required === 'true');
+                let total = required.length;
+                let complete = required.filter(isWrapperValid).length;
+                const password = document.getElementById('id_password');
+                const confirmation = document.getElementById('id_confirm_password');
+                if (valueOf(password) || valueOf(confirmation)) {
+                    total += 2;
+                    if (valueOf(password) && valueOf(password) === valueOf(confirmation)) complete += 2;
+                }
+
+                const percent = total ? Math.round((complete / total) * 100) : 0;
+                document.getElementById('progressPercent').textContent = percent + '%';
+                document.getElementById('progressBarFill').style.width = percent + '%';
+
+                steps.forEach(function (step) {
+                    const requiredFields = Array.from(step.querySelectorAll('.form-field[data-required="true"]'));
+                    const done = requiredFields.filter(isWrapperValid).length;
+                    const sectionStatus = step.querySelector('.form-section__status');
+                    const passwordStarted = step.querySelector('#id_password') && (valueOf(password) || valueOf(confirmation));
+                    const passwordsMatch = !passwordStarted || (valueOf(password) && valueOf(password) === valueOf(confirmation));
+                    const sectionComplete = done === requiredFields.length && passwordsMatch;
+                    sectionStatus.textContent = sectionComplete ? 'Completo' : (done ? done + '/' + requiredFields.length : 'Pendiente');
+                    sectionStatus.classList.toggle('is-complete', sectionComplete);
+                    sectionStatus.classList.toggle('is-pending', !sectionComplete);
+                });
+            }
+
+            function validateStep(index) {
+                const step = steps[index];
+                const requiredFields = Array.from(step.querySelectorAll('.form-field[data-required="true"]'));
+                const emptyWrapper = requiredFields.find((wrapper) => !isWrapperValid(wrapper));
+                if (emptyWrapper) {
+                    const label = emptyWrapper.querySelector('label')?.textContent.trim() || 'Este campo';
+                    emptyWrapper.classList.add('has-error');
+                    openModal('warning', 'Completa o corrige el campo: ' + label + '.');
+                    focusWrapper(emptyWrapper);
+                    return false;
+                }
+
+                if (step.querySelector('#id_password')) {
+                    const password = document.getElementById('id_password');
+                    const confirmation = document.getElementById('id_confirm_password');
+                    if (valueOf(password) || valueOf(confirmation)) {
+                        if (!valueOf(password) || !valueOf(confirmation)) {
+                            openModal('warning', 'Para cambiar la contraseña, completa la contraseña nueva y su confirmación.');
+                            (valueOf(password) ? confirmation : password).focus();
+                            return false;
+                        }
+                        if (valueOf(password) !== valueOf(confirmation)) {
+                            openModal('warning', 'La contraseña nueva y su confirmación no coinciden.');
+                            confirmation.focus();
+                            return false;
+                        }
+                    }
+                }
+                return true;
+            }
+
+            previousButton.addEventListener('click', function () {
+                showStep(currentStep - 1);
+            });
+            nextButton.addEventListener('click', function () {
+                if (validateStep(currentStep)) showStep(currentStep + 1);
+            });
+            emailLocal.addEventListener('input', syncEmailField);
+            emailDomain.addEventListener('change', function () {
+                if (emailDomain.value === 'custom') {
+                    emailCustomDomain.style.display = 'block';
+                } else {
+                    emailCustomDomain.value = '';
+                    emailCustomDomain.style.display = 'none';
+                }
+                syncEmailField();
+                updateProgress();
+            });
+            emailCustomDomain.addEventListener('input', function () {
+                syncEmailField();
+                updateProgress();
+            });
+            document.getElementById('reviewFieldsBtn').addEventListener('click', function () {
+                for (let index = 0; index < steps.length; index += 1) {
+                    if (!validateStep(index)) {
+                        showStep(index);
+                        return;
+                    }
+                }
+                openModal('success', 'Los datos están completos y listos para guardar.');
+            });
+            form.addEventListener('submit', function (event) {
+                syncEmailField();
+                for (let index = 0; index < steps.length; index += 1) {
+                    if (!validateStep(index)) {
+                        event.preventDefault();
+                        showStep(index);
+                        return;
+                    }
+                }
+            });
+
+            document.querySelectorAll('.password-toggle-btn').forEach(function (button) {
+                button.addEventListener('click', function () {
+                    const input = document.getElementById(button.dataset.target || button.getAttribute('aria-controls'));
+                    const show = input.type === 'password';
+                    input.type = show ? 'text' : 'password';
+                    button.textContent = show ? 'Ocultar' : 'Mostrar';
+                    button.setAttribute('aria-label', (show ? 'Ocultar' : 'Mostrar') + ' contraseña');
+                    button.setAttribute('aria-pressed', String(show));
+                });
+            });
+
+            form.querySelectorAll('input, select, textarea').forEach(function (field) {
+                field.addEventListener('input', function () {
+                    field.closest('.form-field')?.classList.remove('has-error');
+                    updateProgress();
+                });
+                field.addEventListener('change', updateProgress);
+                field.addEventListener('focus', function () {
+                    field.closest('.form-field')?.classList.add('is-focus');
+                });
+                field.addEventListener('blur', function () {
+                    field.closest('.form-field')?.classList.remove('is-focus');
+                });
+            });
+
+            document.getElementById('closeModalBtn').addEventListener('click', closeModal);
+            modal.addEventListener('click', function (event) {
+                if (event.target === modal) closeModal();
+            });
+            document.addEventListener('keydown', function (event) {
+                if (event.key === 'Escape' && modal.classList.contains('is-open')) closeModal();
+            });
+
+            const errorStep = steps.findIndex((step) => step.querySelector('.errorlist'));
+            splitExistingEmail();
+            showStep(errorStep >= 0 ? errorStep : 0);
+            updateProgress();
+        });
+    </script>
+{% endblock %}
+
+{% block content %}
+    <div class="admin-panel-container">
+        <nav class="admin-breadcrumbs">
+            <a href="{% url 'admin_panel' %}">Panel</a> › <span>Mi cuenta</span>
+        </nav>
+        <h1 class="admin-page-title">Editar mi cuenta</h1>
+        <div class="admin-card representative-form-shell">
+            <div class="progress-summary">
+                <div class="progress-summary__header">
+                    <span>Progreso del formulario</span>
+                    <strong id="progressPercent">0%</strong>
+                </div>
+                <div class="progress-bar" aria-label="Progreso del formulario">
+                    <span id="progressBarFill" class="progress-bar__fill"></span>
+                </div>
+            </div>
+
+            <div class="representative-form-legend" aria-label="Estado de los campos">
+                <div class="representative-form-legend__item">
+                    <span class="legend-dot legend-dot--filled"></span>
+                    <span>Campo completo</span>
+                </div>
+                <div class="representative-form-legend__item">
+                    <span class="legend-dot legend-dot--empty"></span>
+                    <span>Campo pendiente</span>
+                </div>
+            </div>
+
+            <form method="post" class="admin-form" id="editAccountForm" autocomplete="off" novalidate>
+                {% csrf_token %}
+                {% if form.non_field_errors %}<div class="admin-form-alert">{{ form.non_field_errors }}</div>{% endif %}
+
+                <section class="form-section form-step is-active" data-section-title="Datos personales">
+                    <div class="form-section__header">
+                        <div>
+                            <span class="form-section__eyebrow">Sección 1</span>
+                            <h2>Datos personales</h2>
+                        </div>
+                        <span class="form-section__status is-pending">Pendiente</span>
+                    </div>
+
+                    <div class="admin-form-grid two-column-form-grid">
+                        <div class="form-field{% if form.first_name.errors %} has-error{% endif %}" data-required="true">
+                            <div class="field-header">{{ form.first_name.label_tag }}<span class="field-status-badge">Pendiente</span></div>
+                            {{ form.first_name }}
+                            <small class="admin-form-hint">Solo letras, espacios, puntos o guiones.</small>
+                            {{ form.first_name.errors }}
+                        </div>
+                        <div class="form-field{% if form.last_name.errors %} has-error{% endif %}" data-required="true">
+                            <div class="field-header">{{ form.last_name.label_tag }}<span class="field-status-badge">Pendiente</span></div>
+                            {{ form.last_name }}
+                            <small class="admin-form-hint">Solo letras, espacios, puntos o guiones.</small>
+                            {{ form.last_name.errors }}
+                        </div>
+                        <div class="form-field{% if form.cedula.errors %} has-error{% endif %}" data-required="true">
+                            <div class="field-header">{{ form.cedula.label_tag }}<span class="field-status-badge">Verificada</span></div>
+                            {{ form.cedula }}
+                            <small class="admin-form-hint">Identificación registrada; no se puede modificar desde esta pantalla.</small>
+                            {{ form.cedula.errors }}
+                        </div>
+                    </div>
+                </section>
+
+                <section class="form-section form-step" data-section-title="Contacto y acceso">
+                    <div class="form-section__header">
+                        <div>
+                            <span class="form-section__eyebrow">Sección 2</span>
+                            <h2>Contacto y acceso</h2>
+                        </div>
+                        <span class="form-section__status is-pending">Pendiente</span>
+                    </div>
+
+                    <div class="admin-form-grid two-column-form-grid">
+                        <div class="form-field{% if form.email.errors %} has-error{% endif %}" data-required="true">
+                            <div class="field-header"><label id="emailLabel">{{ form.email.label }}</label><span class="field-status-badge">Pendiente</span></div>
+                            <div class="email-split">
+                                <input type="text" id="email_local" class="email-split__input" placeholder="usuario" aria-label="Nombre del correo" aria-labelledby="emailLabel">
+                                <span class="email-split__at" aria-hidden="true">@</span>
+                                <select id="email_domain" class="email-split__input" aria-label="Dominio del correo" aria-labelledby="emailLabel">
+                                    <option value="">Seleccione</option>
+                                    <option value="gmail.com">gmail.com</option>
+                                    <option value="outlook.com">outlook.com</option>
+                                    <option value="hotmail.com">hotmail.com</option>
+                                    <option value="yahoo.com">yahoo.com</option>
+                                    <option value="icloud.com">icloud.com</option>
+                                    <option value="live.com">live.com</option>
+                                    <option value="institucional.edu">institucional.edu</option>
+                                    <option value="custom">Otro...</option>
+                                </select>
+                                <input type="text" id="email_domain_custom" class="email-split__input email-split__input--custom" placeholder="Escribe otro dominio" aria-label="Otro dominio" style="display:none;">
+                            </div>
+                            <input type="hidden" name="email" id="id_email" value="{{ form.email.value|default:'' }}">
+                            <small class="admin-form-hint">Correo de contacto de esta cuenta.</small>
+                            {{ form.email.errors }}
+                        </div>
+                        <div class="form-field{% if form.username.errors %} has-error{% endif %}" data-required="true">
+                            <div class="field-header">{{ form.username.label_tag }}<span class="field-status-badge">Pendiente</span></div>
+                            {{ form.username }}
+                            <small class="admin-form-hint">Solo letras y números, sin espacios ni símbolos.</small>
+                            {{ form.username.errors }}
+                        </div>
+                        <div class="form-field{% if form.password.errors %} has-error{% endif %}" data-optional="true">
+                            <div class="field-header">{{ form.password.label_tag }}<span class="field-status-badge">Opcional</span></div>
+                            <div class="password-field account-password-field">
+                                {{ form.password }}
+                                <button type="button" class="password-visibility-toggle password-toggle-btn" data-target="id_password" aria-controls="id_password" aria-label="Mostrar contraseña" aria-pressed="false">Mostrar</button>
+                            </div>
+                            <small class="admin-form-hint">Déjala vacía para conservar la contraseña actual. Si la cambias, tendrás que iniciar sesión nuevamente.</small>
+                            {{ form.password.errors }}
+                        </div>
+                        <div class="form-field{% if form.confirm_password.errors %} has-error{% endif %}" data-optional="true">
+                            <div class="field-header">{{ form.confirm_password.label_tag }}<span class="field-status-badge">Opcional</span></div>
+                            <div class="password-field account-password-field">
+                                {{ form.confirm_password }}
+                                <button type="button" class="password-visibility-toggle password-toggle-btn" data-target="id_confirm_password" aria-controls="id_confirm_password" aria-label="Mostrar confirmación de contraseña" aria-pressed="false">Mostrar</button>
+                            </div>
+                            {{ form.confirm_password.errors }}
+                        </div>
+                    </div>
+                </section>
+
+                <div class="form-section__nav">
+                    <button type="button" class="button button--secondary" id="previousStepBtn" style="display:none;">Anterior</button>
+                    <button type="button" class="button button--primary" id="nextStepBtn">Siguiente</button>
+                    <button type="submit" class="button button--success" id="saveAccountBtn" style="display:none;">Guardar cambios</button>
+                    <button type="button" class="button button--secondary" id="reviewFieldsBtn">Revisar campos</button>
+                    <a href="{% url 'admin_panel' %}" class="button button--secondary">Cancelar</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="field-modal-backdrop" id="fieldModalBackdrop" aria-hidden="true">
+        <div class="field-modal" role="dialog" aria-modal="true" aria-labelledby="fieldModalTitle">
+            <div class="field-modal__header">
+                <div class="field-modal__icon" id="fieldModalIcon">!</div>
+                <div>
+                    <p class="field-modal__eyebrow">Validación</p>
+                    <h3 id="fieldModalTitle">Revisa tus datos</h3>
+                </div>
+            </div>
+            <p id="fieldModalMessage">Revisa este campo antes de continuar.</p>
+            <div class="field-modal__actions">
+                <button type="button" class="button button--secondary" id="closeModalBtn">Cerrar</button>
+            </div>
+        </div>
+    </div>
+{% endblock %}

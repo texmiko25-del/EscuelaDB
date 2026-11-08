@@ -1,0 +1,15 @@
+{% extends "admin/base.html" %}
+{% load static %}
+
+{% block title %}E.B. Elba Rosa de Acevedo — Administración{% endblock %}
+
+{% block extrahead %}
+    <link href="{% static 'css/template_admin.css' %}" rel="stylesheet">
+    <link href="{% static 'css/offline.css' %}" rel="stylesheet">
+    <link rel="icon" type="image/x-icon" href="{% static 'img/Logo_Escuela.ico' %}">
+    {{ block.super }}
+{% endblock %}
+
+{% block branding %}
+    <h1 class="branding"><a href="{% url 'admin:index' %}">E.B. Elba Rosa de Acevedo</a></h1>
+{% endblock %}

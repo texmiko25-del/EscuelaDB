@@ -1,0 +1,89 @@
+<div class="admin-panel-container">
+    <nav class="admin-breadcrumbs">
+        <a href="{% url 'admin_panel' %}">Admin</a> › <a href="{% url 'admin_registro_academico' %}">Registro Académico</a> › <span>{% if registro %}Editar{% else %}Registrar{% endif %}</span>
+    </nav>
+    <h1 class="admin-page-title">{% if registro %}Editar registro académico{% else %}Registrar nota académica{% endif %}</h1>
+
+    <div class="admin-card representative-form-shell">
+        <div class="progress-summary">
+            <div class="progress-summary__header"><span>Progreso del formulario</span><strong id="progressPercent">0%</strong></div>
+            <div class="progress-bar" aria-label="Progreso del formulario"><span id="progressBarFill" class="progress-bar__fill"></span></div>
+        </div>
+        <div class="representative-form-legend" aria-label="Estado de los campos">
+            <div class="representative-form-legend__item"><span class="legend-dot legend-dot--filled"></span><span>Campo completo</span></div>
+            <div class="representative-form-legend__item"><span class="legend-dot legend-dot--empty"></span><span>Campo pendiente</span></div>
+        </div>
+
+        <form method="post" class="admin-form" id="academicForm" data-dynamic-form="calificacion" novalidate>
+            {% csrf_token %}
+            {% if form.non_field_errors %}<div class="admin-form-alert">{{ form.non_field_errors }}</div>{% endif %}
+            <section class="form-section">
+                <div class="form-section__header">
+                    <div><span class="form-section__eyebrow">Registro académico</span><h2>Estudiante y evaluación</h2></div>
+                    <span class="form-section__status is-pending">Pendiente</span>
+                </div>
+                <div class="admin-form-grid two-column-form-grid">
+                    <div class="form-field{% if form.estudiante_cedula.errors %} has-server-error has-error{% endif %}" data-required="{{ form.estudiante_cedula.field.required|yesno:'true,false' }}">
+                        <div class="field-header">{{ form.estudiante_cedula.label_tag }}<span class="field-status-badge">Pendiente</span></div>
+                        {{ form.estudiante_cedula }}{{ form.estudiante_cedula.errors }}<small class="dynamic-field-error" aria-live="polite"></small>
+                    </div>
+                    <div class="form-field{% if form.docente_cedula.errors %} has-server-error has-error{% endif %}" data-required="{{ form.docente_cedula.field.required|yesno:'true,false' }}">
+                        <div class="field-header">{{ form.docente_cedula.label_tag }}<span class="field-status-badge">Pendiente</span></div>
+                        {{ form.docente_cedula }}
+                        <small class="admin-form-hint">Se muestran los docentes registrados y su especialidad cuando está disponible.</small>
+                        {{ form.docente_cedula.errors }}<small class="dynamic-field-error" aria-live="polite"></small>
+                    </div>
+                    <div class="form-field{% if form.area.errors %} has-server-error has-error{% endif %}" data-required="{{ form.area.field.required|yesno:'true,false' }}">
+                        <div class="field-header">{{ form.area.label_tag }}<span class="field-status-badge">Pendiente</span></div>
+                        {{ form.area }}<small class="admin-form-hint">Las materias provienen del horario institucional; cada docente solo puede registrar las asignadas a su horario o a sus estudiantes.</small>
+                        {{ form.area.errors }}<small class="dynamic-field-error" aria-live="polite"></small>
+                    </div>
+                    <div class="form-field{% if form.periodo.errors %} has-server-error has-error{% endif %}" data-required="{{ form.periodo.field.required|yesno:'true,false' }}">
+                        <div class="field-header">{{ form.periodo.label_tag }}<span class="field-status-badge">Pendiente</span></div>
+                        {{ form.periodo }}<small class="admin-form-hint">Formato requerido: YYYY-YYYY.</small>
+                        {{ form.periodo.errors }}<small class="dynamic-field-error" aria-live="polite"></small>
+                    </div>
+                    <div class="form-field{% if form.lapso.errors %} has-server-error has-error{% endif %}" data-required="true">
+                        <div class="field-header">{{ form.lapso.label_tag }}<span class="field-status-badge">Requerido</span></div>
+                        {{ form.lapso }}{{ form.lapso.errors }}<small class="dynamic-field-error" aria-live="polite"></small>
+                    </div>
+                    <div class="form-field{% if form.tipo_evaluacion.errors %} has-server-error has-error{% endif %}" data-required="{{ form.tipo_evaluacion.field.required|yesno:'true,false' }}">
+                        <div class="field-header">{{ form.tipo_evaluacion.label_tag }}<span class="field-status-badge">Opcional</span></div>
+                        {{ form.tipo_evaluacion }}{{ form.tipo_evaluacion.errors }}<small class="dynamic-field-error" aria-live="polite"></small>
+                    </div>
+                    <div class="form-field{% if form.nota.errors %} has-server-error has-error{% endif %}" data-required="{{ form.nota.field.required|yesno:'true,false' }}">
+                        <div class="field-header">{{ form.nota.label_tag }}<span class="field-status-badge">Opcional</span></div>
+                        {{ form.nota }}
+                        <small class="admin-form-hint" id="gradePercentagePreview">Seleccione una letra para ver su equivalencia porcentual.</small>
+                        {{ form.nota.errors }}<small class="dynamic-field-error" aria-live="polite"></small>
+                    </div>
+                    <div class="form-field{% if form.estado.errors %} has-server-error has-error{% endif %}" data-required="{{ form.estado.field.required|yesno:'true,false' }}">
+                        <div class="field-header">{{ form.estado.label_tag }}<span class="field-status-badge">Opcional</span></div>
+                        {{ form.estado }}{{ form.estado.errors }}<small class="dynamic-field-error" aria-live="polite"></small>
+                    </div>
+                    <div class="form-field{% if form.comentarios.errors %} has-server-error has-error{% endif %}" style="grid-column: 1 / -1;">
+                        <div class="field-header">{{ form.comentarios.label_tag }}<span class="field-status-badge">Opcional</span></div>
+                        {{ form.comentarios }}{{ form.comentarios.errors }}
+                    </div>
+                    <div class="form-field{% if form.seguimiento.errors %} has-server-error has-error{% endif %}" style="grid-column: 1 / -1;">
+                        <div class="field-header">{{ form.seguimiento.label_tag }}<span class="field-status-badge">Opcional</span></div>
+                        {{ form.seguimiento }}{{ form.seguimiento.errors }}
+                    </div>
+                </div>
+            </section>
+            <div class="form-section__nav">
+                <button type="button" class="button button--secondary" id="reviewDynamicFormButton">Revisar datos</button>
+                <button type="submit" class="button button--success">{% if registro %}Guardar cambios{% else %}Guardar registro académico{% endif %}</button>
+                <a href="{% url 'admin_registro_academico' %}" class="button">Cancelar</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="field-modal-backdrop" id="dynamicFormModal" aria-hidden="true">
+    <div class="field-modal" role="dialog" aria-modal="true" aria-labelledby="dynamicFormModalTitle">
+        <div class="field-modal__header"><div class="field-modal__icon" aria-hidden="true">!</div><div><p class="field-modal__eyebrow">Validación académica</p><h3 id="dynamicFormModalTitle">Revisa los datos</h3></div></div>
+        <p id="dynamicFormModalMessage">Revisa los campos antes de continuar.</p>
+        <div class="field-modal__actions"><button type="button" class="button button--secondary" id="closeDynamicFormModal">Cerrar</button></div>
+    </div>
+</div>

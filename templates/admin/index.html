@@ -1,0 +1,32 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+
+{% block content %}
+<div class="container mx-auto px-6 py-8">
+    <div class="bg-white rounded-lg shadow p-6">
+        <h1 class="text-2xl font-bold text-gray-800 mb-4">Panel de Administración</h1>
+        <p class="text-sm text-gray-600 mb-4">Acceso rápido a los módulos administrativos. El estilo del panel fue personalizado para la dirección, coordinadores y asistentes.</p>
+        <div class="mb-4 flex flex-wrap gap-2">
+            {% if perms and request.user.is_staff %}
+                <a href="{% url 'admin_crear_estudiante' %}" class="bg-blue-600 text-white px-3 py-2 rounded text-sm">+ Agregar Estudiante</a>
+                <a href="{% url 'admin_crear_representante' %}" class="bg-blue-600 text-white px-3 py-2 rounded text-sm">+ Agregar Representante</a>
+                <a href="{% url 'admin_crear_docente' %}" class="bg-blue-600 text-white px-3 py-2 rounded text-sm">+ Agregar Profesor</a>
+            {% endif %}
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="p-4 border rounded">
+                <h3 class="font-bold">Estudiantes</h3>
+                <p class="text-xs text-gray-500">Gestionar registros estudiantiles</p>
+            </div>
+            <div class="p-4 border rounded">
+                <h3 class="font-bold">Profesores</h3>
+                <p class="text-xs text-gray-500">Gestión de profesores y cargos</p>
+            </div>
+            <div class="p-4 border rounded">
+                <h3 class="font-bold">Horarios</h3>
+                <p class="text-xs text-gray-500">Administrar horarios y asignaciones</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

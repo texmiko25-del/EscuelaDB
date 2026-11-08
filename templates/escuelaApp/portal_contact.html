@@ -1,0 +1,273 @@
+{% extends 'escuelaApp/base.html' %}
+{% load static %}
+
+{% block title %}Contacto - {{ info.nombre|default:'E.B. Elba Rosa de Acevedo' }}{% endblock %}
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/portal.css' %}?v=contact-5">
+{% endblock %}
+
+{% block content %}
+<div class="portal-container portal-contact-page">
+    <a href="{% url 'portal_home' %}" class="back-to-top" aria-label="Volver al portal"><span>Volver al portal</span></a>
+    <header class="portal-contact-heading">
+        <span class="portal-contact-eyebrow">Estamos para ayudarte</span>
+        <h1>Contacto</h1>
+        <p>Escríbenos y nuestro equipo se pondrá en contacto contigo.</p>
+    </header>
+
+    <div class="admin-card representative-form-shell portal-contact-shell">
+        <div class="progress-summary">
+            <div class="progress-summary__header">
+                <span>Progreso del formulario</span>
+                <strong id="contactProgressPercent" aria-live="polite">0%</strong>
+            </div>
+            <div class="progress-bar" role="progressbar" aria-label="Progreso del formulario" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+                <span id="contactProgressFill" class="progress-bar__fill"></span>
+            </div>
+        </div>
+
+        <form method="post" class="admin-form portal-contact-form" id="contactForm">
+            {% csrf_token %}
+            <section class="form-section" aria-labelledby="contactDetailsTitle">
+                <div class="form-section__header">
+                    <div>
+                        <span class="form-section__eyebrow">Sección 1</span>
+                        <h2 id="contactDetailsTitle">Tus datos</h2>
+                    </div>
+                    <span class="form-section__status" data-section-count>0/3</span>
+                </div>
+
+                <div class="admin-form-grid">
+                    <div class="form-field contact-field">
+                        <div class="field-header">
+                            <label for="contactName">Nombre</label>
+                            <span class="field-status-badge">Pendiente</span>
+                        </div>
+                        <input type="text" id="contactName" name="nombre" autocomplete="name" maxlength="150" required data-contact-progress>
+                    </div>
+
+                    <div class="form-field contact-field">
+                        <div class="field-header">
+                            <label for="contactCedula">Cédula de representante</label>
+                            <span class="field-status-badge">Pendiente</span>
+                        </div>
+                        <select id="contactCedulaTipo" name="tipo_identificacion" aria-label="Tipo de cédula" required>
+                            <option value="V">Venezolana</option>
+                            <option value="E">Extranjera</option>
+                        </select>
+                        <input type="text" id="contactCedula" name="cedula" inputmode="numeric" autocomplete="off" minlength="7" maxlength="8" pattern="[0-9]{7,8}" placeholder="Número de cédula" title="La cédula venezolana debe tener exactamente 7 u 8 dígitos." required data-contact-progress>
+                        <small class="portal-contact-hint" id="contactCedulaHint">La cédula debe coincidir con el correo registrado.</small>
+                    </div>
+
+                    <div class="form-field contact-field">
+                        <div class="field-header">
+                            <label for="contactEmail">Correo electrónico</label>
+                            <span class="field-status-badge">Pendiente</span>
+                        </div>
+                        <input type="email" id="contactEmail" name="email" autocomplete="email" required data-contact-progress>
+                    </div>
+
+                    <div class="form-field contact-field">
+                        <div class="field-header">
+                            <label for="contactPhonePrefix">Teléfono móvil</label>
+                            <span class="field-status-badge">Opcional</span>
+                        </div>
+                        <div class="portal-phone-split">
+                            <label class="sr-only" for="contactPhonePrefix">Prefijo de celular venezolano</label>
+                            <select id="contactPhonePrefix" aria-label="Prefijo de celular venezolano">
+                                <option value="">Prefijo</option>
+                                <option value="0412">0412</option>
+                                <option value="0414">0414</option>
+                                <option value="0416">0416</option>
+                                <option value="0422">0422</option>
+                                <option value="0424">0424</option>
+                                <option value="0426">0426</option>
+                            </select>
+                            <label class="sr-only" for="contactPhoneDigits">Siete dígitos restantes del teléfono</label>
+                            <input type="text" id="contactPhoneDigits" inputmode="numeric" autocomplete="tel-national" placeholder="1234567" maxlength="7" pattern="[0-9]{7}" title="Escribe únicamente los siete dígitos restantes." data-contact-progress>
+                        </div>
+                        <input type="hidden" name="telefono" id="contactPhone" value="">
+                        <small class="portal-contact-hint">Selecciona el prefijo y escribe solo los siete números restantes.</small>
+                    </div>
+
+                    <div class="form-field contact-field">
+                        <div class="field-header">
+                            <label for="contactSubject">Asunto</label>
+                            <span class="field-status-badge">Opcional</span>
+                        </div>
+                        <input type="text" id="contactSubject" name="asunto" maxlength="200" data-contact-progress>
+                    </div>
+                </div>
+
+                <label class="portal-contact-consent" for="contactWhatsappConsent">
+                    <input type="checkbox" id="contactWhatsappConsent" name="acepta_whatsapp">
+                    <span>
+                        <strong>Respuesta por WhatsApp</strong>
+                        <small>Acepto que la escuela responda por WhatsApp al número que indiqué.</small>
+                    </span>
+                </label>
+            </section>
+
+            <section class="form-section" aria-labelledby="contactMessageTitle">
+                <div class="form-section__header">
+                    <div>
+                        <span class="form-section__eyebrow">Sección 2</span>
+                        <h2 id="contactMessageTitle">¿Cómo podemos ayudarte?</h2>
+                    </div>
+                    <span class="form-section__status" data-section-count>0/1</span>
+                </div>
+
+                <div class="form-field contact-field">
+                    <div class="field-header">
+                        <label for="contactMessage">Mensaje</label>
+                        <span class="field-status-badge">Pendiente</span>
+                    </div>
+                    <textarea id="contactMessage" name="mensaje" rows="6" maxlength="5000" required data-contact-progress></textarea>
+                    <small class="portal-contact-hint"><span id="contactMessageLength">0</span>/5000 caracteres</small>
+                </div>
+            </section>
+
+            <div class="portal-contact-actions">
+                <button class="button button--success" id="contactSubmit" type="submit">
+                    <span>Enviar mensaje</span>
+                </button>
+                <p>Tus datos se utilizarán únicamente para responder a tu consulta.</p>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    (function () {
+        const form = document.getElementById('contactForm');
+        if (!form) return;
+
+        const fields = Array.from(form.querySelectorAll('[data-contact-progress]'));
+        const percent = document.getElementById('contactProgressPercent');
+        const progressBar = form.parentElement.querySelector('[role="progressbar"]');
+        const progressFill = document.getElementById('contactProgressFill');
+        const message = document.getElementById('contactMessage');
+        const messageLength = document.getElementById('contactMessageLength');
+        const phone = document.getElementById('contactPhone');
+        const cedulaTipo = document.getElementById('contactCedulaTipo');
+        const cedula = document.getElementById('contactCedula');
+        const phonePrefix = document.getElementById('contactPhonePrefix');
+        const phoneDigits = document.getElementById('contactPhoneDigits');
+        const consent = document.getElementById('contactWhatsappConsent');
+        const consentLabel = consent.closest('.portal-contact-consent');
+
+        function syncPhone() {
+            phoneDigits.value = phoneDigits.value.replace(/[^0-9]/g, '').slice(0, 7);
+            const prefix = phonePrefix.value;
+            const digits = phoneDigits.value;
+            phone.value = prefix && digits.length === 7
+                ? '+58' + prefix.slice(1) + digits
+                : '';
+        }
+
+        function syncCedulaValidation() {
+            const venezolana = cedulaTipo.value === 'V';
+            cedula.pattern = venezolana ? '[0-9]{7,8}' : '[0-9]{6,9}';
+            cedula.minLength = venezolana ? 7 : 6;
+            cedula.maxLength = venezolana ? 8 : 9;
+            cedula.value = cedula.value.replace(/[^0-9]/g, '').slice(0, cedula.maxLength);
+            const error = venezolana
+                ? 'La cédula venezolana debe tener exactamente 7 u 8 dígitos.'
+                : 'La cédula extranjera debe tener entre 6 y 9 dígitos.';
+            cedula.title = error;
+            const cedulaCompleta = venezolana
+                ? /^[0-9]{7,8}$/.test(cedula.value)
+                : /^[0-9]{6,9}$/.test(cedula.value);
+            cedula.setCustomValidity(cedula.value && !cedulaCompleta ? error : '');
+            document.getElementById('contactCedulaHint').textContent = venezolana
+                ? 'Cédula venezolana: escribe exactamente 7 u 8 dígitos.'
+                : 'Cédula extranjera: escribe entre 6 y 9 dígitos.';
+            return cedula.checkValidity();
+        }
+
+        function updateFormState() {
+            syncPhone();
+            syncCedulaValidation();
+            let complete = 0;
+            const requiredFields = fields.filter(function (field) {
+                return field.required;
+            });
+            fields.forEach(function (field) {
+                const isFilled = field.value.trim() !== '';
+                const isRequired = field.required;
+                const wrapper = field.closest('.contact-field');
+                const badge = wrapper.querySelector('.field-status-badge');
+                const isCedula = field === cedula;
+                const isValid = isCedula ? cedula.checkValidity() : field.checkValidity();
+
+                wrapper.classList.toggle('is-filled', isCedula ? isValid : isFilled);
+                wrapper.classList.toggle('is-empty', isRequired && !isFilled && !isCedula);
+                wrapper.classList.toggle('has-error', isCedula && !isValid);
+                badge.textContent = isCedula
+                    ? (isValid ? 'Válida' : 'Inválida')
+                    : (isFilled ? 'Listo' : (isRequired ? 'Pendiente' : 'Opcional'));
+                if (isRequired && isValid) complete += 1;
+            });
+
+            form.querySelectorAll('.form-section').forEach(function (section) {
+                const sectionFields = Array.from(
+                    section.querySelectorAll('[data-contact-progress][required]')
+                );
+                const sectionComplete = sectionFields.filter(function (field) {
+                    return field.checkValidity();
+                }).length;
+                const counter = section.querySelector('[data-section-count]');
+                counter.textContent = sectionComplete + '/' + sectionFields.length;
+                counter.classList.toggle('is-complete', sectionComplete === sectionFields.length);
+                counter.classList.toggle('is-pending', sectionComplete !== sectionFields.length);
+            });
+
+            const value = requiredFields.length
+                ? Math.round((complete / requiredFields.length) * 100)
+                : 0;
+            percent.textContent = value + '%';
+            progressFill.style.width = value + '%';
+            progressBar.setAttribute('aria-valuenow', String(value));
+            messageLength.textContent = String(message.value.length);
+        }
+
+        fields.forEach(function (field) {
+            field.addEventListener('input', function () {
+                if (field === cedula) syncCedulaValidation();
+                updateFormState();
+            });
+            field.addEventListener('change', updateFormState);
+            field.addEventListener('focus', function () {
+                field.closest('.contact-field').classList.add('is-focus');
+            });
+            field.addEventListener('blur', function () {
+                field.closest('.contact-field').classList.remove('is-focus');
+            });
+        });
+        cedulaTipo.addEventListener('change', function () {
+            syncCedulaValidation();
+            updateFormState();
+        });
+        phonePrefix.addEventListener('change', updateFormState);
+        phoneDigits.addEventListener('input', updateFormState);
+        consent.addEventListener('change', function () {
+            phoneDigits.required = consent.checked;
+            phonePrefix.required = consent.checked;
+            consentLabel.classList.toggle('is-checked', consent.checked);
+            updateFormState();
+        });
+
+        form.addEventListener('submit', function () {
+            syncPhone();
+            const button = document.getElementById('contactSubmit');
+            button.disabled = true;
+            button.querySelector('span').textContent = 'Enviando...';
+        });
+
+        syncCedulaValidation();
+        updateFormState();
+    })();
+</script>
+{% endblock %}

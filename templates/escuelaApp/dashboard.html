@@ -1,0 +1,61 @@
+{% extends 'escuelaApp/base.html' %}
+{% load static %}
+
+{% block title %}Dashboard | Escuela{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
+{% endblock %}
+
+{% block content %}
+    <div class="dashboard-summary dashboard-card-grid">
+        <div class="dashboard-card dashboard-card--info">
+            <div class="dashboard-card-header">
+                <h1>Panel de usuario</h1>
+                {% if user.is_staff %}
+                    <span class="dashboard-card-badge">Administrador/a</span>
+                {% endif %}
+            </div>
+            <p class="dashboard-card-text">Bienvenido, <strong>{{ user.username }}</strong>. Aquí puedes ver tu información básica.</p>
+            <div class="dashboard-card-items">
+                <div class="dashboard-card-item">
+                    <span class="dashboard-card-item-label">Nombre de usuario</span>
+                    <strong>{{ user.username }}</strong>
+                </div>
+                <div class="dashboard-card-item">
+                    <span class="dashboard-card-item-label">Correo</span>
+                    <strong>{{ user.email|default:'No proporcionado' }}</strong>
+                </div>
+                <div class="dashboard-card-item">
+                    <span class="dashboard-card-item-label">Administrador/a</span>
+                    <strong>{{ user.is_staff|yesno:'Sí,No' }}</strong>
+                </div>
+            </div>
+            {% if user.is_staff %}
+                <a class="button button--success dashboard-action-button" href="{% url 'admin_panel' %}">Ir al Panel Admin</a>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="dashboard-summary dashboard-schedule-grid">
+        <div class="dashboard-card dashboard-card--stat">
+            <span class="dashboard-card-item-label">Horarios creados</span>
+            <strong>{{ horarios|length }}</strong>
+            <p class="dashboard-card-text">Total de bloques de horario disponibles.</p>
+        </div>
+        {% if horarios %}
+            {% for horario in horarios %}
+                <div class="dashboard-card dashboard-card--schedule">
+                    <h2>{{ horario.get_ano_display }} — {{ horario.materia }}</h2>
+                    <p><strong>Docente:</strong> {{ horario.docente.nombre }} {{ horario.docente.apellido }}</p>
+                    <p><strong>Día:</strong> {{ horario.get_dia_display }}</p>
+                    <p><strong>Horario:</strong> {{ horario.hora_inicio|time:'H:i' }} - {{ horario.hora_fin|time:'H:i' }}</p>
+                </div>
+            {% endfor %}
+        {% else %}
+            <div class="dashboard-card dashboard-card--empty">
+                <p>No hay horarios creados aún.</p>
+            </div>
+        {% endif %}
+    </div>
+{% endblock %}

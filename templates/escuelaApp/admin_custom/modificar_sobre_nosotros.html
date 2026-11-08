@@ -1,0 +1,43 @@
+{% extends 'escuelaApp/base.html' %}
+{% load static %}
+
+{% block title %}Modificar Sobre Nosotros | Escuela{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/admin.css' %}">
+{% endblock %}
+
+{% block content %}
+    <div class="admin-panel-container">
+        <nav class="admin-breadcrumbs">
+            <a href="{% url 'admin_panel' %}">Admin</a> › <span>Sobre Nosotros</span>
+        </nav>
+        <h1 class="admin-page-title">Modificar contenido de Sobre Nosotros</h1>
+        <div class="admin-card">
+            <form method="post" class="admin-form" enctype="multipart/form-data">
+                {% csrf_token %}
+                {{ form.non_field_errors }}
+
+                <div class="admin-form-row">
+                    {{ form.titulo.label_tag }}
+                    {{ form.titulo }}
+                    {{ form.titulo.errors }}
+                </div>
+
+                <div class="admin-form-row">
+                    {{ form.contenido.label_tag }}
+                    {{ form.contenido }}
+                    {{ form.contenido.errors }}
+                </div>
+
+                <div class="admin-form-row">
+                    {{ form.imagen.label_tag }}
+                    {{ form.imagen }}
+                    {{ form.imagen.errors }}
+                </div>
+
+                <button type="submit" class="button button--primary">Guardar cambios</button>
+            </form>
+        </div>
+    </div>
+{% endblock %}

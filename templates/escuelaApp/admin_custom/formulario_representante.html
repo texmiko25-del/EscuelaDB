@@ -1,0 +1,599 @@
+{% extends 'escuelaApp/base.html' %}
+{% load static %}
+
+{% block title %}Formulario de Representante | Escuela{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/admin.css' %}?v=28">
+{% endblock %}
+
+{% block content %}
+    <div class="admin-panel-container">
+        <nav class="admin-breadcrumbs">
+            <a href="{% url 'home' %}">Inicio</a> › <a href="{% url 'admin_panel' %}">Admin</a> › <a href="{% url 'admin_representantes' %}">Representantes</a> › <span>{% if representante %}Editar{% else %}Crear{% endif %}</span>
+        </nav>
+        <h1 class="admin-page-title">{% if representante %}Editar Representante{% else %}Crear Representante{% endif %}</h1>
+
+        <div class="admin-card representative-form-shell">
+            <div class="progress-summary">
+                <div class="progress-summary__header">
+                    <span>Progreso del formulario</span>
+                    <strong id="progressPercent">0%</strong>
+                </div>
+                <div class="progress-bar" aria-label="Progreso del formulario">
+                    <span id="progressBarFill" class="progress-bar__fill"></span>
+                </div>
+            </div>
+
+            <div class="representative-form-legend">
+                <div class="representative-form-legend__item">
+                    <span class="legend-dot legend-dot--filled"></span>
+                    <span>Campo completo</span>
+                </div>
+                <div class="representative-form-legend__item">
+                    <span class="legend-dot legend-dot--empty"></span>
+                    <span>Campo pendiente</span>
+                </div>
+            </div>
+
+            <form method="post" class="admin-form" id="representativeForm" novalidate>
+                {% csrf_token %}
+                {{ form.non_field_errors }}
+
+                <div class="form-section" data-section-title="Datos básicos">
+                    <div class="form-section__header">
+                        <div>
+                            <span class="form-section__eyebrow">Sección 1</span>
+                            <h2>Datos básicos</h2>
+                        </div>
+                        <span class="form-section__status">0/5</span>
+                    </div>
+
+                    <div class="admin-form-grid">
+                        <div class="form-field{% if form.nombre.errors %} has-error{% endif %}">
+                            <div class="field-header">
+                                {{ form.nombre.label_tag }}
+                                <span class="field-status-badge">Pendiente</span>
+                            </div>
+                            {{ form.nombre }}
+                            {{ form.nombre.errors }}
+                        </div>
+
+                        <div class="form-field{% if form.apellido.errors %} has-error{% endif %}">
+                            <div class="field-header">
+                                {{ form.apellido.label_tag }}
+                                <span class="field-status-badge">Pendiente</span>
+                            </div>
+                            {{ form.apellido }}
+                            {{ form.apellido.errors }}
+                        </div>
+
+                        <div class="form-field{% if form.tipo_identificacion.errors %} has-error{% endif %}">
+                            <div class="field-header">
+                                {{ form.tipo_identificacion.label_tag }}
+                                <span class="field-status-badge">Pendiente</span>
+                            </div>
+                            {{ form.tipo_identificacion }}
+                            {{ form.tipo_identificacion.errors }}
+                        </div>
+
+                        <div class="form-field{% if form.cedula.errors %} has-error{% endif %}">
+                            <div class="field-header">
+                                {{ form.cedula.label_tag }}
+                                <span class="field-status-badge">Pendiente</span>
+                            </div>
+                            {{ form.cedula }}
+                            <small class="admin-form-hint">Venezolana: 7 u 8 dígitos. Extranjera: de 6 a 9 dígitos.</small>
+                            {{ form.cedula.errors }}
+                        </div>
+
+                        <div class="form-field{% if form.telefono.errors %} has-error{% endif %}">
+                            <div class="field-header">
+                                {{ form.telefono.label_tag }}
+                                <span class="field-status-badge">Pendiente</span>
+                            </div>
+                            <div class="phone-split" style="display:flex; gap:0.5rem; align-items:center;">
+                                <select id="telefono_prefijo" class="phone-split__input" aria-label="Prefijo telefónico" style="max-width:120px;">
+                                    <option value="">Prefijo</option>
+                                    <option value="0414">0414</option>
+                                    <option value="0424">0424</option>
+                                    <option value="0416">0416</option>
+                                    <option value="0426">0426</option>
+                                    <option value="0412">0412</option>
+                                </select>
+                                <input type="text" id="telefono_numero" class="phone-split__input" placeholder="1234567" maxlength="7" aria-label="Resto del número" style="flex:1; min-width:0;">
+                            </div>
+                            <input type="hidden" name="telefono" id="id_telefono_hidden" value="{{ form.telefono.value|default:'' }}">
+                            {{ form.telefono.errors }}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-section" data-section-title="Contacto y familia">
+                    <div class="form-section__header">
+                        <div>
+                            <span class="form-section__eyebrow">Sección 2</span>
+                            <h2>Contacto y familia</h2>
+                        </div>
+                        <span class="form-section__status">0/5</span>
+                    </div>
+
+                    <div class="admin-form-grid">
+                        <div class="form-field{% if form.email.errors %} has-error{% endif %}">
+                            <div class="field-header">
+                                {{ form.email.label_tag }}
+                                <span class="field-status-badge">Pendiente</span>
+                            </div>
+                            <div class="email-split">
+                                <input type="text" id="email_local" class="email-split__input" placeholder="usuario" aria-label="Nombre del correo">
+                                <span class="email-split__at">@</span>
+                                <select id="email_domain" class="email-split__input" aria-label="Dominio del correo">
+                                    <option value="">Seleccione</option>
+                                    <option value="gmail.com">gmail.com</option>
+                                    <option value="outlook.com">outlook.com</option>
+                                    <option value="hotmail.com">hotmail.com</option>
+                                    <option value="yahoo.com">yahoo.com</option>
+                                    <option value="icloud.com">icloud.com</option>
+                                    <option value="live.com">live.com</option>
+                                    <option value="institutional.edu">institutional.edu</option>
+                                    <option value="custom">Otro...</option>
+                                </select>
+                                <input type="text" id="email_domain_custom" class="email-split__input email-split__input--custom" placeholder="Escribe otro dominio" aria-label="Otro dominio" style="display:none;">
+                            </div>
+                            <input type="hidden" name="email" id="id_email_hidden" value="{{ form.email.value|default:'' }}">
+                            {{ form.email.errors }}
+                        </div>
+
+                        <div class="form-field{% if form.ocupacion.errors %} has-error{% endif %}">
+                            <div class="field-header">
+                                {{ form.ocupacion.label_tag }}
+                                <span class="field-status-badge">Pendiente</span>
+                            </div>
+                            {{ form.ocupacion }}
+                            {{ form.ocupacion.errors }}
+                        </div>
+
+                        <div class="form-field{% if form.parentesco.errors %} has-error{% endif %}">
+                            <div class="field-header">
+                                {{ form.parentesco.label_tag }}
+                                <span class="field-status-badge">Pendiente</span>
+                            </div>
+                            {{ form.parentesco }}
+                            {{ form.parentesco.errors }}
+                        </div>
+
+                        <div class="form-field{% if form.estado_civil.errors %} has-error{% endif %}">
+                            <div class="field-header">
+                                {{ form.estado_civil.label_tag }}
+                                <span class="field-status-badge">Pendiente</span>
+                            </div>
+                            {{ form.estado_civil }}
+                            {{ form.estado_civil.errors }}
+                        </div>
+
+                        <div class="form-field{% if form.nacionalidad.errors %} has-error{% endif %}">
+                            <div class="field-header">
+                                {{ form.nacionalidad.label_tag }}
+                                <span class="field-status-badge">Pendiente</span>
+                            </div>
+                            {{ form.nacionalidad }}
+                            {{ form.nacionalidad.errors }}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-section" data-section-title="Documentación y ubicación">
+                    <div class="form-section__header">
+                        <div>
+                            <span class="form-section__eyebrow">Sección 3</span>
+                            <h2>Documentación y ubicación</h2>
+                        </div>
+                        <span class="form-section__status">0/3</span>
+                    </div>
+
+                    <div class="admin-form-grid">
+                        <div class="form-field{% if form.partida_nacimiento.errors %} has-error{% endif %}">
+                            <div class="field-header">
+                                {{ form.partida_nacimiento.label_tag }}
+                                <span class="field-status-badge">Pendiente</span>
+                            </div>
+                            {{ form.partida_nacimiento }}
+                            {{ form.partida_nacimiento.errors }}
+                        </div>
+
+                        <div class="form-field{% if form.ubicacion.errors %} has-error{% endif %}">
+                            <div class="field-header">
+                                {{ form.ubicacion.label_tag }}
+                                <span class="field-status-badge">Pendiente</span>
+                            </div>
+                            {{ form.ubicacion }}
+                            {{ form.ubicacion.errors }}
+                        </div>
+
+                        <div class="form-field form-field--checkbox{% if form.es_tutor_legal.errors %} has-error{% endif %}">
+                            <div class="field-header">
+                                {{ form.es_tutor_legal.label_tag }}
+                                <span class="field-status-badge">Pendiente</span>
+                            </div>
+                            <div class="checkbox-wrapper">
+                                {{ form.es_tutor_legal }}
+                            </div>
+                            {{ form.es_tutor_legal.errors }}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="admin-form-actions">
+                    <button type="submit" class="button button--success">Guardar representante</button>
+                    <button type="button" class="button button--secondary" id="reviewFieldsBtn">Revisar campos</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="field-modal-backdrop" id="fieldModalBackdrop" aria-hidden="true">
+        <div class="field-modal" role="dialog" aria-modal="true" aria-labelledby="fieldModalTitle">
+            <div class="field-modal__header">
+                <div class="field-modal__icon" id="fieldModalIcon">!</div>
+                <div>
+                    <p class="field-modal__eyebrow">Validación del formulario</p>
+                    <h3 id="fieldModalTitle">Advertencia</h3>
+                </div>
+            </div>
+            <p id="fieldModalMessage">Revisa este campo antes de continuar.</p>
+            <div class="field-modal__actions">
+                <button type="button" class="button button--secondary" id="closeModalBtn">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="{% static 'js/cedula_unica.js' %}?v=5"></script>
+    <script>
+        (function () {
+            const form = document.getElementById('representativeForm');
+            const modal = document.getElementById('fieldModalBackdrop');
+            const modalTitle = document.getElementById('fieldModalTitle');
+            const modalMessage = document.getElementById('fieldModalMessage');
+            const modalIcon = document.getElementById('fieldModalIcon');
+            const closeModalBtn = document.getElementById('closeModalBtn');
+            const reviewFieldsBtn = document.getElementById('reviewFieldsBtn');
+            const tipoIdentificacionField = document.getElementById('id_tipo_identificacion');
+            const cedulaField = document.getElementById('id_cedula');
+
+            function getFieldValue(field) {
+                if (!field) return '';
+                if (field.type === 'checkbox') return field.checked;
+                return (field.value || '').trim();
+            }
+
+            function syncCedulaPrefix() {
+                if (!tipoIdentificacionField || !cedulaField) return;
+
+                const tipo = (tipoIdentificacionField.value || 'V').toUpperCase();
+                const maxDigits = tipo === 'V' ? 8 : 9;
+                const value = (cedulaField.value || '').trim();
+                const digits = (value.replace(/^[A-Z]-?/i, '').replace(/\D/g, '')).slice(0, maxDigits);
+
+                cedulaField.maxLength = tipo === 'V' ? 10 : 11;
+                cedulaField.value = digits ? tipo + '-' + digits : '';
+            }
+
+            function syncEmailField() {
+                const localPart = document.getElementById('email_local');
+                const domainPart = document.getElementById('email_domain');
+                const customDomain = document.getElementById('email_domain_custom');
+                const hiddenEmail = document.getElementById('id_email_hidden');
+                if (!localPart || !domainPart || !hiddenEmail) return;
+
+                let domainValue = domainPart.value.trim();
+                if (domainValue === 'custom') {
+                    domainValue = customDomain ? customDomain.value.trim() : '';
+                }
+
+                const combined = localPart.value.trim() && domainValue ? localPart.value.trim() + '@' + domainValue : '';
+                hiddenEmail.value = combined;
+
+                if (localPart.value.trim() || domainValue) {
+                    localPart.setAttribute('data-filled', 'true');
+                    domainPart.setAttribute('data-filled', 'true');
+                } else {
+                    localPart.removeAttribute('data-filled');
+                    domainPart.removeAttribute('data-filled');
+                }
+            }
+
+            function splitExistingEmail() {
+                const hiddenEmail = document.getElementById('id_email_hidden');
+                const localPart = document.getElementById('email_local');
+                const domainPart = document.getElementById('email_domain');
+                const customDomain = document.getElementById('email_domain_custom');
+                if (!hiddenEmail || !localPart || !domainPart) return;
+
+                const value = hiddenEmail.value || '';
+                if (!value || !value.includes('@')) {
+                    localPart.value = '';
+                    domainPart.value = '';
+                    if (customDomain) {
+                        customDomain.value = '';
+                        customDomain.style.display = 'none';
+                    }
+                    return;
+                }
+
+                const [local, ...domainSegments] = value.split('@');
+                localPart.value = local || '';
+                const domainValue = domainSegments.join('@') || '';
+                const domainOptions = Array.from(domainPart.options).map(option => option.value);
+
+                if (domainOptions.includes(domainValue)) {
+                    domainPart.value = domainValue;
+                    if (customDomain) {
+                        customDomain.value = '';
+                        customDomain.style.display = 'none';
+                    }
+                } else {
+                    domainPart.value = 'custom';
+                    if (customDomain) {
+                        customDomain.value = domainValue;
+                        customDomain.style.display = 'block';
+                    }
+                }
+            }
+
+            function updateFieldStatus(field) {
+                const wrapper = field.closest('.form-field');
+                if (!wrapper) return;
+
+                const value = getFieldValue(field);
+                const isFilled = value !== '' && value !== false;
+                const badge = wrapper.querySelector('.field-status-badge');
+
+                wrapper.classList.toggle('is-filled', isFilled);
+                wrapper.classList.toggle('is-empty', !isFilled);
+
+                if (badge) {
+                    badge.textContent = isFilled ? 'Listo' : 'Pendiente';
+                }
+            }
+
+            function updateSectionStatus(section) {
+                const fields = Array.from(section.querySelectorAll('input, select, textarea'));
+                const total = fields.length;
+                const filled = fields.filter((field) => {
+                    const value = getFieldValue(field);
+                    return value !== '' && value !== false;
+                }).length;
+
+                const counter = section.querySelector('.form-section__status');
+                if (counter) {
+                    counter.textContent = filled + '/' + total;
+                }
+            }
+
+            function updateProgressBar() {
+                const allFields = Array.from(form.querySelectorAll('input, select, textarea'));
+                const totalFields = allFields.length;
+                const filledFields = allFields.filter((field) => {
+                    const value = getFieldValue(field);
+                    return value !== '' && value !== false;
+                }).length;
+
+                const percent = totalFields ? Math.round((filledFields / totalFields) * 100) : 0;
+                const bar = document.getElementById('progressBarFill');
+                const percentLabel = document.getElementById('progressPercent');
+
+                if (bar) {
+                    bar.style.width = percent + '%';
+                }
+
+                if (percentLabel) {
+                    percentLabel.textContent = percent + '%';
+                }
+            }
+
+            function updateAllSections() {
+                document.querySelectorAll('.form-section').forEach(updateSectionStatus);
+                updateProgressBar();
+            }
+
+            function openModal(type, message) {
+                modalTitle.textContent = type === 'warning' ? 'Advertencia' : 'Campo completado';
+                modalMessage.textContent = message;
+                modalIcon.textContent = type === 'warning' ? '!' : '✓';
+                modalIcon.style.background = type === 'warning' ? '#fff3cd' : '#dcfce7';
+                modalIcon.style.color = type === 'warning' ? '#a16207' : '#166534';
+                modal.classList.add('is-open');
+                modal.setAttribute('aria-hidden', 'false');
+            }
+
+            function closeModal() {
+                modal.classList.remove('is-open');
+                modal.setAttribute('aria-hidden', 'true');
+            }
+
+            function validateField(field) {
+                const value = getFieldValue(field);
+                const phonePrefix = document.getElementById('telefono_prefijo');
+                const phoneNumber = document.getElementById('telefono_numero');
+                const hiddenPhone = document.getElementById('id_telefono_hidden');
+                const phoneField = field === phonePrefix || field === phoneNumber || field === hiddenPhone;
+                if (phoneField) {
+                    const prefix = phonePrefix?.value || '';
+                    const digits = (phoneNumber?.value || '').trim();
+                    if ((prefix || digits) && !/^0(?:414|424|416|426|412)\d{7}$/.test(prefix + digits)) {
+                        openModal('warning', 'El teléfono debe comenzar con 0414, 0424, 0416, 0426 o 0412 y tener 11 dígitos.');
+                        return false;
+                    }
+                }
+
+                const emailLocal = document.getElementById('email_local');
+                const emailDomain = document.getElementById('email_domain');
+                const customDomain = document.getElementById('email_domain_custom');
+                const hiddenEmail = document.getElementById('id_email_hidden');
+                const emailField = [emailLocal, emailDomain, customDomain, hiddenEmail].includes(field);
+                const emailStarted = Boolean(
+                    emailLocal?.value.trim() || emailDomain?.value || customDomain?.value.trim()
+                );
+                if (emailField && emailStarted) {
+                    const email = hiddenEmail?.value.trim() || '';
+                    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+                        openModal('warning', 'El correo electrónico no tiene un formato válido.');
+                        return false;
+                    }
+                }
+
+                if (value === '' || value === false) return true;
+
+                if (field.name === 'cedula' && !/^(?:V-\d{7,8}|E-\d{6,9})$/.test(value)) {
+                    openModal('warning', 'La cédula debe tener 7 u 8 dígitos si es venezolana, o de 6 a 9 si es extranjera.');
+                    return false;
+                }
+                if (field.name === 'email' && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
+                    openModal('warning', 'El correo electrónico no tiene un formato válido.');
+                    return false;
+                }
+                return true;
+            }
+
+            const phonePrefix = document.getElementById('telefono_prefijo');
+            const phoneNumber = document.getElementById('telefono_numero');
+            const hiddenPhoneField = document.getElementById('id_telefono_hidden');
+
+            function syncPhoneField() {
+                if (!phonePrefix || !phoneNumber || !hiddenPhoneField) return;
+                const prefix = (phonePrefix.value || '').trim();
+                const digits = (phoneNumber.value || '').replace(/\D/g, '').slice(0, 7);
+                phoneNumber.value = digits;
+                hiddenPhoneField.value = prefix && digits ? prefix + digits : '';
+            }
+
+            function splitExistingPhone() {
+                if (!phonePrefix || !phoneNumber || !hiddenPhoneField) return;
+                const value = (hiddenPhoneField.value || '').replace(/\D/g, '');
+                if (!value || value.length < 11) {
+                    phonePrefix.value = '';
+                    phoneNumber.value = '';
+                    hiddenPhoneField.value = '';
+                    return;
+                }
+                const prefix = value.substring(0, 4);
+                const rest = value.substring(4, 11);
+                const validPrefixes = ['0414', '0424', '0416', '0426', '0412'];
+                phonePrefix.value = validPrefixes.includes(prefix) ? prefix : '';
+                phoneNumber.value = rest || '';
+                hiddenPhoneField.value = phonePrefix.value && rest ? phonePrefix.value + rest : '';
+            }
+
+            document.querySelectorAll('input, select, textarea').forEach((field) => {
+                updateFieldStatus(field);
+                field.addEventListener('blur', () => {
+                    if (field.tagName === 'SELECT') return;
+                    validateField(field);
+                });
+                field.addEventListener('input', () => {
+                    if (field === tipoIdentificacionField) {
+                        syncCedulaPrefix();
+                    }
+                    if (field === phoneNumber) {
+                        syncPhoneField();
+                    }
+                    updateFieldStatus(field);
+                    updateAllSections();
+                });
+                field.addEventListener('change', () => {
+                    if (field === tipoIdentificacionField) {
+                        syncCedulaPrefix();
+                    }
+                    if (field === phonePrefix) {
+                        syncPhoneField();
+                    }
+                    updateFieldStatus(field);
+                    updateAllSections();
+                });
+            });
+
+            if (phonePrefix && phoneNumber) {
+                splitExistingPhone();
+                phonePrefix.addEventListener('change', syncPhoneField);
+                phoneNumber.addEventListener('input', syncPhoneField);
+            }
+
+            if (tipoIdentificacionField) {
+                tipoIdentificacionField.addEventListener('change', syncCedulaPrefix);
+                tipoIdentificacionField.addEventListener('input', syncCedulaPrefix);
+            }
+
+            if (cedulaField) {
+                cedulaField.addEventListener('input', function () {
+                    const tipo = (tipoIdentificacionField?.value || 'V').toUpperCase();
+                    const maxDigits = tipo === 'V' ? 8 : 9;
+                    const numericValue = (cedulaField.value || '').replace(/^[A-Z]-?/i, '').replace(/\D/g, '').slice(0, maxDigits);
+                    cedulaField.value = numericValue ? tipo + '-' + numericValue : '';
+                });
+            }
+
+            const emailLocal = document.getElementById('email_local');
+            const emailDomain = document.getElementById('email_domain');
+            const customDomainInput = document.getElementById('email_domain_custom');
+            if (emailLocal && emailDomain) {
+                splitExistingEmail();
+                emailLocal.addEventListener('input', syncEmailField);
+                emailDomain.addEventListener('change', function () {
+                    if (this.value === 'custom') {
+                        if (customDomainInput) {
+                            customDomainInput.style.display = 'block';
+                            customDomainInput.focus();
+                        }
+                    } else {
+                        if (customDomainInput) {
+                            customDomainInput.style.display = 'none';
+                            customDomainInput.value = '';
+                        }
+                    }
+                    syncEmailField();
+                });
+
+                if (customDomainInput) {
+                    customDomainInput.addEventListener('input', syncEmailField);
+                }
+            }
+
+            form.addEventListener('submit', function (event) {
+                const fields = Array.from(form.querySelectorAll('input, select, textarea'));
+                const invalidField = fields.find((field) => {
+                    const value = getFieldValue(field);
+                    return value !== '' && value !== false && !validateField(field);
+                });
+
+                if (invalidField) {
+                    event.preventDefault();
+                    invalidField.focus();
+                }
+            });
+
+            reviewFieldsBtn.addEventListener('click', () => {
+                const allFields = Array.from(form.querySelectorAll('input, select, textarea'));
+                const invalidField = allFields.find((field) => {
+                    const value = getFieldValue(field);
+                    return value !== '' && value !== false && !validateField(field);
+                });
+
+                if (invalidField) {
+                    invalidField.focus();
+                    return;
+                }
+
+                openModal('success', 'Los datos ingresados están correctos. Los campos vacíos no generan errores.');
+            });
+
+            closeModalBtn.addEventListener('click', closeModal);
+            modal.addEventListener('click', (event) => {
+                if (event.target === modal) {
+                    closeModal();
+                }
+            });
+
+            updateAllSections();
+        })();
+    </script>
+{% endblock %}

@@ -1,0 +1,485 @@
+{% extends 'escuelaApp/base.html' %}
+{% load static %}
+
+{% block title %}{{ title }} - Horarios{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/admin.css' %}?v=28">
+{% endblock %}
+
+{% block extra_js %}
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const form = document.getElementById('scheduleForm');
+            const steps = Array.from(form.querySelectorAll('.form-step'));
+            const previousButton = document.getElementById('previousStepBtn');
+            const nextButton = document.getElementById('nextStepBtn');
+            const saveButton = document.getElementById('saveScheduleBtn');
+            const reviewButton = document.getElementById('reviewScheduleBtn');
+            const modal = document.getElementById('scheduleValidationModal');
+            const modalMessage = document.getElementById('scheduleValidationMessage');
+            const conflictDetails = document.getElementById('scheduleConflictDetails');
+            const closeModalButton = document.getElementById('closeScheduleModal');
+            const existingRows = JSON.parse(document.getElementById('existing-schedules-data').textContent || '[]');
+            const teacherSubjects = JSON.parse(document.getElementById('teacher-subjects-data').textContent || '{}');
+            const schoolDayStart = JSON.parse(document.getElementById('schedule-day-start').textContent);
+            const schoolDayEnd = JSON.parse(document.getElementById('schedule-day-end').textContent);
+            const teacherField = document.getElementById('id_docente');
+            const subjectField = document.getElementById('id_materia');
+            const gradeField = document.getElementById('id_ano');
+            const dayField = document.getElementById('id_dia');
+            const startField = document.getElementById('id_hora_inicio');
+            const endField = document.getElementById('id_hora_fin');
+            const availabilityList = document.getElementById('scheduleAvailabilityList');
+            const availabilityMessage = document.getElementById('scheduleAvailabilityMessage');
+            let currentStep = 0;
+            let lastConflictKey = '';
+
+            function valueOf(field) {
+                return (field?.value || '').trim();
+            }
+
+            function openModal(message, conflicts) {
+                modalMessage.textContent = message;
+                conflictDetails.replaceChildren();
+                (conflicts || []).forEach(function (row) {
+                    const item = document.createElement('article');
+                    item.className = 'schedule-conflict-item';
+
+                    const subjectTeacher = document.createElement('strong');
+                    const teacherName = [row['docente__nombre'], row['docente__apellido']]
+                        .filter(Boolean).join(' ') || 'Profesor sin nombre';
+                    subjectTeacher.textContent = row.materia + ' · ' + teacherName;
+
+                    const scheduleDetails = document.createElement('span');
+                    const dayLabel = Array.from(dayField.options)
+                        .find((option) => option.value === row.dia)?.textContent.trim() || row.dia;
+                    const gradeLabel = Array.from(gradeField.options)
+                        .find((option) => option.value === row.ano)?.textContent.trim() || row.ano;
+                    scheduleDetails.textContent = dayLabel + ' · ' + gradeLabel + ' · '
+                        + row.hora_inicio.slice(0, 5) + ' - ' + row.hora_fin.slice(0, 5);
+
+                    item.append(subjectTeacher, scheduleDetails);
+                    conflictDetails.appendChild(item);
+                });
+                conflictDetails.hidden = !conflicts?.length;
+                modal.classList.add('is-open');
+                modal.setAttribute('aria-hidden', 'false');
+                closeModalButton.focus();
+            }
+
+            function closeModal() {
+                modal.classList.remove('is-open');
+                modal.setAttribute('aria-hidden', 'true');
+            }
+
+            function showStep(index) {
+                currentStep = Math.max(0, Math.min(index, steps.length - 1));
+                steps.forEach(function (step, stepIndex) {
+                    const active = stepIndex === currentStep;
+                    step.classList.toggle('is-active', active);
+                    step.style.display = active ? 'grid' : 'none';
+                });
+                previousButton.style.display = currentStep === 0 ? 'none' : 'inline-flex';
+                nextButton.style.display = currentStep === steps.length - 1 ? 'none' : 'inline-flex';
+                saveButton.style.display = currentStep === steps.length - 1 ? 'inline-flex' : 'none';
+            }
+
+            function updateProgress() {
+                const fields = Array.from(form.querySelectorAll('.form-field'));
+                const completed = fields.filter((wrapper) => {
+                    const field = wrapper.querySelector('input, select, textarea');
+                    const filled = Boolean(valueOf(field));
+                    const badge = wrapper.querySelector('.field-status-badge');
+                    wrapper.classList.toggle('is-filled', filled);
+                    wrapper.classList.toggle('is-empty', !filled);
+                    if (badge) badge.textContent = filled ? 'Listo' : 'Pendiente';
+                    return filled;
+                }).length;
+
+                const percent = fields.length ? Math.round((completed / fields.length) * 100) : 0;
+                document.getElementById('progressPercent').textContent = percent + '%';
+                document.getElementById('progressBarFill').style.width = percent + '%';
+
+                steps.forEach(function (step) {
+                    const stepFields = Array.from(step.querySelectorAll('.form-field'));
+                    const done = stepFields.filter((wrapper) => valueOf(wrapper.querySelector('input, select, textarea'))).length;
+                    const status = step.querySelector('.form-section__status');
+                    const complete = done === stepFields.length;
+                    status.textContent = complete ? 'Completo' : (done ? done + '/' + stepFields.length : 'Pendiente');
+                    status.classList.toggle('is-complete', complete);
+                    status.classList.toggle('is-pending', !complete);
+                });
+            }
+
+            function syncSubjectFromTeacher() {
+                const subject = teacherSubjects[teacherField.value] || '';
+                subjectField.value = subject;
+                subjectField.dispatchEvent(new Event('input', { bubbles: true }));
+                subjectField.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+
+            function toMinutes(value) {
+                const [hours, minutes] = value.split(':').map(Number);
+                return hours * 60 + minutes;
+            }
+
+            function formatTime(minutes) {
+                return String(Math.floor(minutes / 60)).padStart(2, '0') + ':'
+                    + String(minutes % 60).padStart(2, '0');
+            }
+
+            function findConflicts() {
+                const grade = valueOf(gradeField);
+                const day = valueOf(dayField);
+                const teacher = valueOf(teacherField);
+                const start = valueOf(startField);
+                const end = valueOf(endField);
+                if (!grade || !day || !start || !end || start >= end) return [];
+
+                const startMinutes = toMinutes(start);
+                const endMinutes = toMinutes(end);
+                return existingRows.filter(function (row) {
+                    if (row.dia !== day) return false;
+                    const overlaps = startMinutes < toMinutes(row.hora_fin)
+                        && endMinutes > toMinutes(row.hora_inicio);
+                    return overlaps && (row.ano === grade || (teacher && String(row.docente_id) === teacher));
+                });
+            }
+
+            function conflictMessage(conflicts) {
+                return 'No se puede guardar este horario: '
+                    + conflicts.length + (conflicts.length === 1
+                        ? ' bloque existente ocupa ese espacio.'
+                        : ' bloques existentes ocupan ese espacio.')
+                    + ' Revisa el día, grado, hora, materia y profesor de cada bloque.';
+            }
+
+            function getAvailableRanges() {
+                const grade = valueOf(gradeField);
+                const day = valueOf(dayField);
+                const teacher = valueOf(teacherField);
+                if (!grade || !day) return [];
+
+                const dayStart = toMinutes(schoolDayStart);
+                const dayEnd = toMinutes(schoolDayEnd);
+                const occupied = existingRows
+                    .filter((row) => row.dia === day && (
+                        row.ano === grade || (teacher && String(row.docente_id) === teacher)
+                    ))
+                    .map((row) => ({
+                        start: Math.max(dayStart, toMinutes(row.hora_inicio)),
+                        end: Math.min(dayEnd, toMinutes(row.hora_fin)),
+                    }))
+                    .filter((range) => range.start < range.end)
+                    .sort((left, right) => left.start - right.start);
+
+                const available = [];
+                let cursor = dayStart;
+                occupied.forEach(function (range) {
+                    if (range.start > cursor) available.push({ start: cursor, end: range.start });
+                    cursor = Math.max(cursor, range.end);
+                });
+                if (cursor < dayEnd) available.push({ start: cursor, end: dayEnd });
+                return available;
+            }
+
+            function updateAvailability(showConflictModal) {
+                const grade = valueOf(gradeField);
+                const day = valueOf(dayField);
+                const ranges = getAvailableRanges();
+                availabilityList.replaceChildren();
+
+                const conflicts = findConflicts();
+                if (conflicts.length) {
+                    const message = conflictMessage(conflicts);
+                    const conflictKey = [grade, day, valueOf(startField), valueOf(endField),
+                        ...conflicts.map((row) => [row.materia, row.hora_inicio, row.hora_fin].join(':'))]
+                        .join('|');
+                    availabilityMessage.textContent = message;
+                    saveButton.disabled = true;
+                    if (showConflictModal && conflictKey !== lastConflictKey) {
+                        openModal(message, conflicts);
+                        lastConflictKey = conflictKey;
+                    }
+                    return ranges;
+                }
+                lastConflictKey = '';
+
+                if (!grade || !day) {
+                    availabilityMessage.textContent = 'Selecciona un grado y un día para consultar sus espacios.';
+                    saveButton.disabled = true;
+                    return ranges;
+                }
+
+                if (!ranges.length) {
+                    availabilityMessage.textContent = 'Todas las horas están ocupadas para este grado, día y profesor.';
+                    saveButton.disabled = true;
+                    return ranges;
+                }
+
+                availabilityMessage.textContent = 'Pulsa una franja para proponer un bloque de 45 minutos; puedes ajustar el inicio o el fin.';
+                saveButton.disabled = false;
+                ranges.forEach(function (range) {
+                    const option = document.createElement('button');
+                    option.type = 'button';
+                    option.className = 'button button--secondary';
+                    option.textContent = formatTime(range.start) + ' - ' + formatTime(range.end);
+                    option.addEventListener('click', function () {
+                        const proposedEnd = Math.min(range.start + 45, range.end);
+                        startField.value = formatTime(range.start);
+                        endField.value = formatTime(proposedEnd);
+                        startField.dispatchEvent(new Event('input', { bubbles: true }));
+                        endField.dispatchEvent(new Event('input', { bubbles: true }));
+                    });
+                    availabilityList.appendChild(option);
+                });
+                return ranges;
+            }
+
+            function validateStep(index) {
+                if (index === 1) {
+                    const conflicts = findConflicts();
+                    if (conflicts.length) {
+                        openModal(conflictMessage(conflicts), conflicts);
+                        return false;
+                    }
+                }
+
+                const step = steps[index];
+                const wrappers = Array.from(step.querySelectorAll('.form-field'));
+                const invalid = wrappers.find(function (wrapper) {
+                    const field = wrapper.querySelector('input, select, textarea');
+                    return !valueOf(field) || !field.checkValidity();
+                });
+
+                if (invalid) {
+                    const field = invalid.querySelector('input, select, textarea');
+                    const label = invalid.querySelector('label')?.textContent.trim() || 'Este campo';
+                    invalid.classList.add('has-error');
+                    openModal('Completa o corrige el campo: ' + label + '.');
+                    field.focus();
+                    return false;
+                }
+
+                if (index === 1) {
+                    const grade = valueOf(gradeField);
+                    const teacher = valueOf(document.getElementById('id_docente'));
+                    const day = valueOf(dayField);
+                    const start = valueOf(startField);
+                    const end = valueOf(endField);
+
+                    if (start >= end) {
+                        openModal('La hora de inicio debe ser anterior a la hora de fin.');
+                        document.getElementById('id_hora_inicio').focus();
+                        return false;
+                    }
+
+                    const startMinutes = toMinutes(start);
+                    const endMinutes = toMinutes(end);
+
+                    const availableRange = getAvailableRanges().some((range) => (
+                        startMinutes >= range.start && endMinutes <= range.end
+                    ));
+                    if (!availableRange) {
+                        openModal('Selecciona una franja disponible para ese grado, día y profesor.');
+                        return false;
+                    }
+
+                }
+
+                return true;
+            }
+
+            function validateAll() {
+                for (let index = 0; index < steps.length; index += 1) {
+                    if (!validateStep(index)) {
+                        showStep(index);
+                        return false;
+                    }
+                }
+                return true;
+            }
+
+            previousButton.addEventListener('click', function () {
+                showStep(currentStep - 1);
+            });
+            teacherField.addEventListener('change', syncSubjectFromTeacher);
+            [gradeField, dayField, teacherField, startField, endField].forEach((field) => {
+                field.addEventListener('input', () => updateAvailability(false));
+                field.addEventListener('change', () => updateAvailability(true));
+            });
+            nextButton.addEventListener('click', function () {
+                if (validateStep(currentStep)) showStep(currentStep + 1);
+            });
+            reviewButton.addEventListener('click', function () {
+                if (validateAll()) openModal('Los datos están completos y no se detectan solapamientos.');
+            });
+            form.addEventListener('submit', function (event) {
+                if (!validateAll()) event.preventDefault();
+            });
+            form.querySelectorAll('input, select, textarea').forEach(function (field) {
+                field.addEventListener('input', function () {
+                    field.closest('.form-field')?.classList.remove('has-error');
+                    updateProgress();
+                });
+                field.addEventListener('change', updateProgress);
+            });
+            closeModalButton.addEventListener('click', closeModal);
+            modal.addEventListener('click', function (event) {
+                if (event.target === modal) closeModal();
+            });
+            document.addEventListener('keydown', function (event) {
+                if (event.key === 'Escape' && modal.classList.contains('is-open')) closeModal();
+            });
+
+            const errorStep = steps.findIndex((step) => step.querySelector('.errorlist'));
+            syncSubjectFromTeacher();
+            updateAvailability();
+            showStep(errorStep >= 0 ? errorStep : 0);
+            updateProgress();
+
+            const serverError = form.querySelector('.admin-form-alert');
+            if (serverError) openModal(serverError.innerText.trim());
+        });
+    </script>
+{% endblock %}
+
+{% block content %}
+<div class="admin-panel-container">
+    <nav class="admin-breadcrumbs">
+        <a href="{% url 'admin_panel' %}">Admin</a> › <a href="{% url 'gestionar_horarios' %}">Horarios</a> › <span>{{ title }}</span>
+    </nav>
+    <h1 class="admin-page-title">{{ title }}</h1>
+
+    <div class="admin-card representative-form-shell">
+        <div class="progress-summary">
+            <div class="progress-summary__header">
+                <span>Progreso del horario</span>
+                <strong id="progressPercent">0%</strong>
+            </div>
+            <div class="progress-bar" aria-label="Progreso del formulario">
+                <span id="progressBarFill" class="progress-bar__fill"></span>
+            </div>
+        </div>
+
+        <div class="representative-form-legend" aria-label="Estado de los campos">
+            <div class="representative-form-legend__item">
+                <span class="legend-dot legend-dot--filled"></span>
+                <span>Campo completo</span>
+            </div>
+            <div class="representative-form-legend__item">
+                <span class="legend-dot legend-dot--empty"></span>
+                <span>Campo pendiente</span>
+            </div>
+        </div>
+
+        <form method="post" class="admin-form" id="scheduleForm" novalidate>
+            {% csrf_token %}
+            {% if form.non_field_errors %}
+                <div class="admin-form-alert">{{ form.non_field_errors }}</div>
+            {% endif %}
+
+            <section class="form-section form-step is-active" data-section-title="Asignatura y profesor">
+                <div class="form-section__header">
+                    <div>
+                        <span class="form-section__eyebrow">Sección 1</span>
+                        <h2>Asignatura y profesor</h2>
+                    </div>
+                    <span class="form-section__status is-pending">Pendiente</span>
+                </div>
+                <div class="admin-form-grid two-column-form-grid">
+                    <div class="form-field{% if form.ano.errors %} has-error{% endif %}">
+                        <div class="field-header">{{ form.ano.label_tag }}<span class="field-status-badge">Pendiente</span></div>
+                        {{ form.ano }}
+                        {{ form.ano.errors }}
+                    </div>
+                    <div class="form-field{% if form.materia.errors %} has-error{% endif %}">
+                        <div class="field-header">{{ form.materia.label_tag }}<span class="field-status-badge">Pendiente</span></div>
+                        {{ form.materia }}
+                        <small class="admin-form-hint">Seleccione o escriba una materia.</small>
+                        {{ form.materia.errors }}
+                    </div>
+                    <div class="form-field{% if form.docente.errors %} has-error{% endif %}">
+                        <div class="field-header">{{ form.docente.label_tag }}<span class="field-status-badge">Pendiente</span></div>
+                        {{ form.docente }}
+                        <small class="admin-form-hint">La materia se completa según la especialidad del profesor seleccionado.</small>
+                        {{ form.docente.errors }}
+                    </div>
+                </div>
+            </section>
+
+            <section class="form-section form-step" data-section-title="Día y horas">
+                <div class="form-section__header">
+                    <div>
+                        <span class="form-section__eyebrow">Sección 2</span>
+                        <h2>Día y horas</h2>
+                    </div>
+                    <span class="form-section__status is-pending">Pendiente</span>
+                </div>
+                <div class="admin-form-grid two-column-form-grid">
+                    <div class="form-field{% if form.dia.errors %} has-error{% endif %}">
+                        <div class="field-header">{{ form.dia.label_tag }}<span class="field-status-badge">Pendiente</span></div>
+                        {{ form.dia }}
+                        {{ form.dia.errors }}
+                    </div>
+                    <div class="form-field{% if form.hora_inicio.errors %} has-error{% endif %}">
+                        <div class="field-header">{{ form.hora_inicio.label_tag }}<span class="field-status-badge">Pendiente</span></div>
+                        {{ form.hora_inicio }}
+                        {{ form.hora_inicio.errors }}
+                    </div>
+                    <div class="form-field{% if form.hora_fin.errors %} has-error{% endif %}">
+                        <div class="field-header">{{ form.hora_fin.label_tag }}<span class="field-status-badge">Pendiente</span></div>
+                        {{ form.hora_fin }}
+                        {{ form.hora_fin.errors }}
+                    </div>
+                </div>
+                <div class="form-field" style="grid-column: 1 / -1;">
+                    <div class="field-header"><span>Franjas disponibles ({{ horario_jornada_inicio }} - {{ horario_jornada_fin }})</span></div>
+                    <p class="admin-form-hint" id="scheduleAvailabilityMessage" aria-live="polite"></p>
+                    <div id="scheduleAvailabilityList" style="display:flex; flex-wrap:wrap; gap:8px;"></div>
+                </div>
+            </section>
+
+            <div class="form-section__nav">
+                <button type="button" class="button button--secondary" id="previousStepBtn" style="display:none;">Anterior</button>
+                <button type="button" class="button button--primary" id="nextStepBtn">Siguiente</button>
+                <button type="submit" class="button button--success" id="saveScheduleBtn" style="display:none;">Guardar horario</button>
+                <button type="button" class="button button--secondary" id="reviewScheduleBtn">Revisar campos</button>
+                <a href="{% url 'gestionar_horarios' %}" class="button">Cancelar</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="field-modal-backdrop" id="scheduleValidationModal" aria-hidden="true">
+    <div class="field-modal" role="dialog" aria-modal="true" aria-labelledby="scheduleModalTitle">
+        <div class="field-modal__header">
+            <div class="field-modal__icon" aria-hidden="true">!</div>
+            <div>
+                <p class="field-modal__eyebrow">Validación del horario</p>
+                <h3 id="scheduleModalTitle">Revisa los datos</h3>
+            </div>
+        </div>
+        <p id="scheduleValidationMessage">Revisa los campos antes de continuar.</p>
+        <div class="schedule-conflict-list" id="scheduleConflictDetails" hidden></div>
+        <div class="field-modal__actions">
+            <button type="button" class="button button--secondary" id="closeScheduleModal">Cerrar</button>
+        </div>
+    </div>
+</div>
+
+{{ existing_schedules|json_script:"existing-schedules-data" }}
+{{ teacher_subjects|json_script:"teacher-subjects-data" }}
+{{ horario_jornada_inicio|json_script:"schedule-day-start" }}
+{{ horario_jornada_fin|json_script:"schedule-day-end" }}
+<datalist id="subject-list">
+    <option value="Matemáticas"><option value="Inglés"><option value="Lengua"><option value="Castellano">
+    <option value="Biología"><option value="Ciencias Naturales"><option value="Ciencias Sociales">
+    <option value="Historia"><option value="Geografía"><option value="Educación Física">
+    <option value="Educación Artística"><option value="Música"><option value="Tecnología">
+    <option value="Computación"><option value="Valores"><option value="Ética">
+    <option value="Medio Ambiente"><option value="Formación Ciudadana"><option value="Educación Ambiental">
+    <option value="Orientación">
+</datalist>
+{% endblock %}

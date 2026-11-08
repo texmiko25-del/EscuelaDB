@@ -1,0 +1,334 @@
+{% extends 'escuelaApp/base.html' %}
+{% load static %}
+
+{% block title %}{% if is_coordinador %}Panel de Coordinación{% else %}Panel de Administración{% endif %} | Escuela{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/admin.css' %}?v=11">
+{% endblock %}
+
+{% block content %}
+    <div class="admin-panel-container">
+        <nav class="admin-breadcrumbs">
+            <a href="{% url 'home' %}">Inicio</a> › <span>{% if is_coordinador %}Coordinación{% else %}Admin{% endif %}</span>
+        </nav>
+        <h1 class="admin-page-title">{% if is_coordinador %}Panel de Coordinación{% else %}Panel de Administración{% endif %}</h1>
+        <div class="admin-welcome-card" style="margin-bottom: 24px; padding: 20px; background: #fff; border: 1px solid #d9e2ec; border-radius: 12px;">
+            <p style="margin: 0 0 8px; font-size: 1rem; color: #102a43;">Bienvenido, <strong>{{ request.user.username }}</strong>. Cargo: <strong>{{ user_cargo_display }}</strong></p>
+            <p style="margin: 0; color: #334e68;">{% if is_coordinador %}Accede a estudiantes, profesores, calificaciones y asistencia.{% else %}Desde aquí puedes gestionar los datos clave según tu rol. Selecciona la sección que más necesitas en este momento.{% endif %}</p>
+        </div>
+
+        <div class="admin-card" style="margin-bottom: 1.5rem;">
+            <div class="admin-card-header">
+                <h2>Panel recomendado para tu rol</h2>
+            </div>
+            <div class="admin-card-body">
+                {% if request.user.is_superuser %}
+                    <p class="admin-card-metric">Como Director/a y administrador/a del sistema, puedes gestionar cuentas, personal y contenido.</p>
+                    <div class="admin-card-actions">
+                        <a href="{% url 'subdireccion_solicitudes_matricula' %}" class="button button--secondary">Solicitudes de matrícula</a>
+                        <a href="{% url 'subdireccion_asistencia_personal' %}" class="button button--secondary">Asistencia del personal</a>
+                        <a href="{% url 'admin_cuentas' %}" class="button button--secondary">Cuentas y permisos</a>
+                        <a href="{% url 'admin_personal' %}" class="button button--secondary">Personal</a>
+                        <a href="{% url 'admin_mensajes' %}" class="button button--secondary">Mensajes</a>
+                        <a href="{% url 'historial_reportes_sistema' %}" class="button button--secondary">Reportes del sistema</a>
+                        <a href="{% url 'admin_registro_academico' %}" class="button button--secondary">Notas académicas</a>
+                    </div>
+                {% elif is_directora %}
+                    <p class="admin-card-metric">Como Director/a tienes acceso casi completo al sistema. Revisa los informes generales, controla los horarios, verifica las notas y supervisa las cuentas de personal.</p>
+                    <div class="admin-card-actions">
+                        <a href="{% url 'admin_estudiantes' %}" class="button button--secondary">Estudiantes</a>
+                        <a href="{% url 'admin_representantes' %}" class="button button--secondary">Representantes</a>
+                        <a href="{% url 'admin_docentes' %}" class="button button--secondary">Docentes</a>
+                        <a href="{% url 'admin_registro_academico' %}" class="button button--secondary">Notas académicas</a>
+                        <a href="{% url 'gestionar_horarios' %}" class="button button--secondary">Horarios</a>
+                        <a href="{% url 'subdireccion_solicitudes_matricula' %}" class="button button--secondary">Solicitudes de matrícula</a>
+                        <a href="{% url 'subdireccion_asistencia_personal' %}" class="button button--secondary">Asistencia del personal</a>
+                        <a href="{% url 'admin_cuentas' %}" class="button button--secondary">Cuentas y permisos</a>
+                        <a href="{% url 'admin_mensajes' %}" class="button button--secondary">Mensajes</a>
+                        <a href="{% url 'historial_reportes_sistema' %}" class="button button--secondary">Reportes del sistema</a>
+                    </div>
+                {% elif is_subdirectora %}
+                    <p class="admin-card-metric">Eje administrativo y de matrícula: gestiona cuentas, personal, solicitudes de ingreso y asistencia.</p>
+                    <div class="admin-card-actions">
+                        <a href="{% url 'subdireccion_solicitudes_matricula' %}" class="button button--success">Solicitudes de matrícula{% if solicitudes_matricula_pendientes %} ({{ solicitudes_matricula_pendientes }}){% endif %}</a>
+                        <a href="{% url 'subdireccion_asistencia_personal' %}" class="button button--secondary">Asistencia del personal</a>
+                        <a href="{% url 'admin_cuentas' %}" class="button button--secondary">Cuentas y permisos</a>
+                        <a href="{% url 'admin_personal' %}" class="button button--secondary">Personal</a>
+                        <a href="{% url 'admin_estudiantes' %}" class="button button--secondary">Estudiantes</a>
+                    </div>
+                {% elif is_coordinador %}
+                    <p class="admin-card-metric">Coordinación de estudiantes, profesores, calificaciones y asistencia.</p>
+                    <div class="admin-card-actions">
+                        <a href="{% url 'admin_docentes' %}" class="button button--secondary">Docentes</a>
+                        <a href="{% url 'admin_estudiantes' %}" class="button button--secondary">Estudiantes</a>
+                        <a href="{% url 'admin_registro_academico' %}" class="button button--secondary">Calificaciones</a>
+                        <a href="{% url 'admin_asistencias' %}" class="button button--secondary">Asistencia</a>
+                    </div>
+                {% elif is_docente %}
+                    <p class="admin-card-metric">Consulta las materias y las listas de estudiantes de cada grado asignado en tus horarios.</p>
+                    <div class="admin-card-actions">
+                        <a href="{% url 'docente_mis_estudiantes' %}" class="button button--secondary" title="Ver estudiantes por grado y horario" aria-label="Ver estudiantes por grado y horario" style="display:inline-flex;align-items:center;justify-content:center;width:46px;height:46px;padding:0;border-radius:12px;">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px;">
+                                <path d="M16 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="9.5" cy="7" r="3"></circle>
+                                <path d="M17 8h4"></path>
+                                <path d="M19 6v4"></path>
+                            </svg>
+                        </a>
+                        <a href="{% url 'admin_registro_academico' %}" class="button button--secondary" title="Notas académicas" aria-label="Notas académicas" style="display:inline-flex;align-items:center;justify-content:center;width:46px;height:46px;padding:0;border-radius:12px;">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px;">
+                                <path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H18"></path>
+                                <path d="M6.5 21H20V7H6.5A2.5 2.5 0 0 0 4 9.5v9A2.5 2.5 0 0 0 6.5 21Z"></path>
+                                <path d="M8 9h8"></path>
+                                <path d="M8 13h5"></path>
+                            </svg>
+                        </a>
+                    </div>
+                {% else %}
+                    <p class="admin-card-metric">Selecciona las secciones disponibles para tu cuenta.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="admin-summary-grid">
+            <div class="admin-summary-card">
+                <span>Estudiantes registrados</span>
+                <strong>{{ total_estudiantes }}</strong>
+                <p>Estudiantes activos en el sistema.</p>
+            </div>
+            {% if not is_coordinador and user_cargo != 'ASISTENTE' %}
+            <div class="admin-summary-card">
+                <span>Representantes</span>
+                <strong>{{ total_representantes }}</strong>
+                <p>Familias y tutores disponibles.</p>
+            </div>
+            {% endif %}
+            {% if user_cargo != 'ASISTENTE' %}
+            <div class="admin-summary-card">
+                <span>Docentes</span>
+                <strong>{{ total_docentes }}</strong>
+                <p>Docentes asignados a materias.</p>
+            </div>
+            {% endif %}
+            {% if not is_coordinador and user_cargo != 'ASISTENTE' %}
+            <div class="admin-summary-card">
+                <span>Empleados</span>
+                <strong>{{ total_empleados }}</strong>
+                <p>Personal administrativo y operativo.</p>
+            </div>
+            <div class="admin-summary-card">
+                <span>Mensajes recibidos</span>
+                <strong>{{ total_mensajes }}</strong>
+                <p>Consultas y contactos pendientes.</p>
+            </div>
+            <div class="admin-summary-card">
+                <span>Bloques de horario</span>
+                <strong>{{ total_horarios }}</strong>
+                <p>Horarios académicos creados.</p>
+            </div>
+            {% else %}
+            <div class="admin-summary-card">
+                <span>Calificaciones</span>
+                <strong>{{ total_registros_academicos }}</strong>
+                <p>Registros académicos cargados.</p>
+            </div>
+            <div class="admin-summary-card">
+                <span>Asistencias</span>
+                <strong>{{ total_asistencias }}</strong>
+                <p>Registros de asistencia.</p>
+            </div>
+            {% endif %}
+        </div>
+
+        <section class="admin-actions-grid">
+            {% if is_docente %}
+                <a href="{% url 'docente_mis_estudiantes' %}" class="button button--success">Ver estudiantes por grado y horario</a>
+            {% elif is_coordinador %}
+                <a href="{% url 'admin_docentes' %}" class="button button--success">Docentes</a>
+                <a href="{% url 'admin_estudiantes' %}" class="button button--success">Estudiantes</a>
+                <a href="{% url 'admin_registro_academico' %}" class="button button--success">Calificaciones</a>
+                <a href="{% url 'admin_asistencias' %}" class="button button--success">Asistencia</a>
+            {% elif is_subdirectora %}
+                <a href="{% url 'subdireccion_solicitudes_matricula' %}" class="button button--success">Solicitudes de matrícula</a>
+                <a href="{% url 'subdireccion_asistencia_personal' %}" class="button button--success">Asistencia del personal</a>
+                <a href="{% url 'admin_cuentas' %}" class="button button--secondary">Cuentas y permisos</a>
+                <a href="{% url 'admin_personal' %}" class="button button--secondary">Personal</a>
+            {% elif user_cargo == 'ASISTENTE' %}
+                <a href="{% url 'admin_estudiantes' %}" class="button button--success">Estudiantes</a>
+                <a href="{% url 'admin_registro_academico' %}" class="button button--secondary">Notas</a>
+                <a href="{% url 'admin_asistencias' %}" class="button button--secondary">Asistencia</a>
+            {% elif is_directora %}
+                <a href="{% url 'admin_estudiantes' %}" class="button button--success">Estudiantes</a>
+                <a href="{% url 'admin_representantes' %}" class="button button--success">Representantes</a>
+                <a href="{% url 'admin_docentes' %}" class="button button--success">Docentes</a>
+                <a href="{% url 'registrar_asignacion' %}" class="button button--secondary">Asignaciones</a>
+                <a href="{% url 'subdireccion_solicitudes_matricula' %}" class="button button--secondary">Solicitudes de matrícula</a>
+                <a href="{% url 'subdireccion_asistencia_personal' %}" class="button button--secondary">Asistencia del personal</a>
+                <a href="{% url 'admin_cuentas' %}" class="button button--secondary">Cuentas y permisos</a>
+                <a href="{% url 'admin_personal' %}" class="button button--secondary">Personal</a>
+                <a href="{% url 'admin_mensajes' %}" class="button button--secondary">Mensajes</a>
+                <a href="{% url 'historial_reportes_sistema' %}" class="button button--secondary">Reportes del sistema</a>
+            {% else %}
+                <a href="{% url 'admin_estudiantes' %}" class="button button--success">Gestionar Estudiantes</a>
+                <a href="{% url 'admin_representantes' %}" class="button button--success">Gestionar Representantes</a>
+                <a href="{% url 'admin_docentes' %}" class="button button--success">Gestionar Docentes</a>
+                <a href="{% url 'registrar_asignacion' %}" class="button button--success">Registrar Asignación</a>
+            {% endif %}
+        </section>
+
+        <div class="admin-panel-cards">
+            {% if is_directora or is_subdirectora %}
+            <div class="admin-card">
+                <div class="admin-card-header">
+                    <h2>Cuentas y permisos</h2>
+                </div>
+                <div class="admin-card-body">
+                    {% if is_directora %}<p class="admin-card-metric">Total de cuentas: <strong>{{ total_cuentas }}</strong></p><p class="admin-card-metric">Cuentas con acceso al panel: <strong>{{ admin_count }}</strong></p>{% endif %}
+                    <div class="admin-card-actions">
+                        <a href="{% url 'admin_crear_usuario' %}" class="button button--success">+ Crear nueva cuenta</a>
+                        <a href="{% url 'admin_cuentas' %}" class="button">Abrir listado de cuentas</a>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            {% if is_subdirectora %}
+            <div class="admin-card">
+                <div class="admin-card-header"><h2>Solicitudes de matrícula</h2></div>
+                <div class="admin-card-body">
+                    <p class="admin-card-metric">Pendientes de validar: <strong>{{ solicitudes_matricula_pendientes }}</strong></p>
+                    <div class="admin-card-actions"><a href="{% url 'subdireccion_solicitudes_matricula' %}" class="button button--success">Revisar documentos</a><a href="{% url 'subdireccion_reporte_matricula' 'pdf' %}" class="button button--secondary">Reporte PDF</a><a href="{% url 'subdireccion_reporte_matricula' 'docx' %}" class="button button--secondary">Reporte Word</a></div>
+                </div>
+            </div>
+            <div class="admin-card">
+                <div class="admin-card-header"><h2>Asistencia del personal</h2></div>
+                <div class="admin-card-body">
+                    <p class="admin-card-metric">Registros del mes: <strong>{{ asistencias_personal_mes }}</strong></p>
+                    <div class="admin-card-actions"><a href="{% url 'subdireccion_asistencia_personal' %}" class="button">Ver control mensual</a><a href="{% url 'subdireccion_registrar_asistencia' %}" class="button button--success">Registrar asistencia</a><a href="{% url 'subdireccion_reporte_asistencia' 'pdf' %}" class="button button--secondary">Reporte PDF</a><a href="{% url 'subdireccion_reporte_asistencia' 'docx' %}" class="button button--secondary">Reporte Word</a></div>
+                </div>
+            </div>
+            {% endif %}
+
+            {% if is_directora %}
+            <div class="admin-card">
+                <div class="admin-card-header">
+                    <h2>Personal</h2>
+                </div>
+                <div class="admin-card-body">
+                    <p class="admin-card-metric">Total de empleados: <strong>{{ total_empleados }}</strong></p>
+                    <div class="admin-card-actions">
+                        <a href="{% url 'admin_personal' %}" class="button">Ver personal</a>
+                        <a href="{% url 'admin_crear_empleado' %}" class="button button--success">+ Nuevo empleado</a>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            {% if is_directora or is_subdirectora %}
+            <div class="admin-card">
+                <div class="admin-card-header">
+                    <h2>Asignaciones académicas</h2>
+                </div>
+                <div class="admin-card-body">
+                    <p class="admin-card-metric">Total de asignaciones: <strong>{{ total_asignaciones }}</strong></p>
+                    <div class="admin-card-actions">
+                        <a href="{% url 'admin_asignaciones' %}" class="button">Ver asignaciones</a>
+                        <a href="{% url 'registrar_asignacion' %}" class="button button--success">Registrar asignación</a>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <div class="admin-card">
+                <div class="admin-card-header">
+                    <h2>Notas académicas</h2>
+                </div>
+                <div class="admin-card-body">
+                    <p class="admin-card-metric">Registros cargados: <strong>{{ total_registros_academicos }}</strong></p>
+                    <div class="admin-card-actions">
+                        <a href="{% url 'admin_registro_academico' %}" class="button">Ver registros</a>
+                        {% if user_cargo != 'ASISTENTE' %}
+                        <a href="{% url 'admin_crear_registro_academico' %}" class="button button--success">Registrar nota</a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            {% if is_directora %}
+            <div class="admin-card">
+                <div class="admin-card-header">
+                    <h2>Configuración del panel</h2>
+                </div>
+                <div class="admin-card-body">
+                    <p class="admin-card-metric"><strong>Título:</strong> {{ config.titulo_panel }}</p>
+                    <p class="admin-card-metric"><strong>Mensaje:</strong> {{ config.mensaje_bienvenida|default:'Sin mensaje cargado' }}</p>
+                    <p class="admin-card-metric"><strong>Modo mantenimiento:</strong> {% if config.mantenimiento_activo %}🔴 Activado{% else %}🟢 Desactivado{% endif %}</p>
+                    <div class="admin-card-actions">
+                        <a href="{% url 'admin_modificar_dashboard' %}" class="button">Modificar configuración</a>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            {% if is_directora %}
+            <div class="admin-card">
+                <div class="admin-card-header">
+                    <h2>Sobre Nosotros</h2>
+                </div>
+                <div class="admin-card-body">
+                    <p class="admin-card-metric">Página pública editable desde el panel.</p>
+                    <div class="admin-card-actions">
+                        <a href="{% url 'admin_modificar_sobre_nosotros' %}" class="button">Modificar Sobre Nosotros</a>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            {% if not is_coordinador and user_cargo != 'ASISTENTE' %}
+            <div class="admin-card">
+                <div class="admin-card-header">
+                    <h2>Horarios Académicos</h2>
+                </div>
+                <div class="admin-card-body">
+                    <p class="admin-card-metric">Total bloques: <strong>{{ total_horarios }}</strong></p>
+                    <div class="admin-card-actions">
+                        <a href="{% url 'gestionar_horarios' %}" class="button">Ver horarios</a>
+                        <a href="{% url 'crear_horario' %}" class="button button--success">Crear horario</a>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <div class="admin-card">
+                <div class="admin-card-header">
+                    <h2>Control de Asistencia</h2>
+                </div>
+                <div class="admin-card-body">
+                    <p class="admin-card-metric">Registros de asistencia: <strong>{{ total_asistencias }}</strong></p>
+                    <div class="admin-card-actions">
+                        <a href="{% url 'admin_asistencias' %}" class="button">Ver asistencias</a>
+                        {% if user_cargo != 'ASISTENTE' %}
+                        <a href="{% url 'admin_crear_asistencia' %}" class="button button--success">Registrar asistencia</a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            {% if not is_coordinador and user_cargo != 'ASISTENTE' %}
+            <div class="admin-card">
+                <div class="admin-card-header">
+                    <h2>Mensajes</h2>
+                </div>
+                <div class="admin-card-body">
+                    <p class="admin-card-metric">Mensajes recibidos: <strong>{{ total_mensajes }}</strong></p>
+                    <div class="admin-card-actions">
+                        <a href="{% url 'admin_mensajes' %}" class="button">Ver mensajes</a>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+    </div>
+{% endblock %}

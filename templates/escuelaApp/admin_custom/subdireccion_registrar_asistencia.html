@@ -1,0 +1,16 @@
+{% extends 'escuelaApp/base.html' %}
+{% load static %}
+
+{% block title %}Registrar asistencia de personal | Escuela{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'css/admin.css' %}">{% endblock %}
+{% block content %}
+<div class="admin-panel-container">
+    <nav class="admin-breadcrumbs"><a href="{% url 'admin_panel' %}">Panel</a> › <a href="{% url 'subdireccion_asistencia_personal' %}">Asistencia del personal</a> › <span>Registrar</span></nav>
+    <h1 class="admin-page-title">Registrar asistencia del personal</h1>
+    <form method="post" class="admin-form">
+        {% csrf_token %}{{ form.non_field_errors }}
+        {% for field in form %}<div class="admin-form-row{% if field.errors %} has-error{% endif %}">{{ field.label_tag }}{{ field }}{{ field.errors }}</div>{% endfor %}
+        <div class="admin-form-actions"><button type="submit" class="button button--success">Guardar asistencia</button><a href="{% url 'subdireccion_asistencia_personal' %}" class="button button--secondary">Cancelar</a></div>
+    </form>
+</div>
+{% endblock %}

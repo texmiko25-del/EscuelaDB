@@ -1,0 +1,171 @@
+{% extends 'escuelaApp/base.html' %}
+{% load static %}
+
+{% block title %}Reportes del sistema | Escuela{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/admin.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="admin-panel-container">
+    <nav class="admin-breadcrumbs">
+        <a href="{% url 'admin_panel' %}">Admin</a> › <span>Reportes del sistema</span>
+    </nav>
+    <div class="admin-form-hero">
+        <h1 class="admin-page-title">Reportes del sistema</h1>
+        <p class="admin-form-help">Consulta matrícula, asistencia y rendimiento académico con cinco enfoques complementarios.</p>
+    </div>
+
+    <nav aria-label="Tipos de reporte" class="report-types-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;margin:20px 0;">
+        {% for reporte in tipos_reporte %}
+        <a href="?tipo={{ reporte.id }}" class="admin-card admin-card--padded"{% if tipo_reporte == reporte.id %} aria-current="page" style="border-color:#18794e;box-shadow:inset 0 0 0 1px #18794e;"{% endif %}>
+            <strong>{{ reporte.nombre }}</strong>
+            <span style="display:block;margin-top:6px;color:#52606d;font-size:.9rem;">{{ reporte.descripcion }}</span>
+        </a>
+        {% endfor %}
+    </nav>
+
+    <form method="get" class="admin-card admin-card--padded admin-form" style="margin-bottom:20px;">
+        <input type="hidden" name="tipo" value="{{ tipo_reporte }}">
+        <h2 class="admin-section-title">Filtros del reporte</h2>
+        <div class="admin-form-grid">
+            {% for field in filtros_form %}
+            <div class="admin-form-row{% if field.errors %} has-error{% endif %}">
+                {{ field.label_tag }}
+                {{ field }}
+                {{ field.errors }}
+            </div>
+            {% endfor %}
+        </div>
+        {% if filtros_form.non_field_errors %}<div class="admin-form-alert">{{ filtros_form.non_field_errors }}</div>{% endif %}
+        <div class="admin-form-actions">
+            <button type="submit" class="button button--success">Generar reporte</button>
+            <button type="submit" name="exportar" value="xlsx" class="button button--secondary">Descargar Excel</button>
+        </div>
+    </form>
+
+    {% if tipo_reporte == 'resumen' and datos_reporte.indicadores %}
+    <section aria-labelledby="titulo-resumen" class="admin-card admin-card--padded" style="margin-bottom:20px;">
+        <h2 id="titulo-resumen" class="admin-section-title">Resumen ejecutivo</h2>
+        <div class="admin-summary-grid">
+            {% for indicador in datos_reporte.indicadores %}
+            <div class="admin-summary-card"><span>{{ indicador.etiqueta }}</span><strong>{{ indicador.valor }}</strong></div>
+            {% endfor %}
+        </div>
+    </section>
+    {% elif tipo_reporte == 'detalle' or tipo_reporte == 'filtros' %}
+    <section class="admin-card admin-card--padded" style="margin-bottom:20px;">
+        <h2 class="admin-section-title">{% if tipo_reporte == 'detalle' %}Detalle de registros académicos{% else %}Resultados con filtros múltiples{% endif %}</h2>
+        <p class="admin-form-help">{{ datos_reporte.total_resultados }} resultado(s){% if datos_reporte.limite_alcanzado %}. Se muestran los primeros 500; descarga el CSV para consultar el conjunto completo{% endif %}.</p>
+        <div class="admin-table-wrapper">
+            {% if tipo_reporte == 'detalle' %}
+            <table class="admin-users-table">
+                <thead><tr><th>Estudiante</th><th>Matrícula</th><th>Grado</th><th>Representante</th><th>Correo</th><th>Registros</th><th>Promedio</th><th>Ausencias</th></tr></thead>
+                <tbody>
+                    {% for item in datos_reporte.estudiantes %}
+                    <tr>
+                        <td>{{ item.estudiante.nombre }} {{ item.estudiante.apellido }}</td>
+                        <td>{{ item.estudiante.matricula|default:'-' }}</td>
+                        <td>{{ item.estudiante.grado }}</td>
+                        <td>{% if item.estudiante.representante %}{{ item.estudiante.representante.nombre }} {{ item.estudiante.representante.apellido }}{% else %}-{% endif %}</td>
+                        <td>{% if item.estudiante.representante %}{{ item.estudiante.representante.email|default:'-' }}{% else %}-{% endif %}</td>
+                        <td>{{ item.registros }}</td>
+                        <td>{{ item.promedio|default:'-' }}{% if item.promedio is not None %}%{% endif %}</td>
+                        <td>{{ item.ausencias }}</td>
+                    </tr>
+                    {% empty %}<tr><td colspan="8">No hay estudiantes que coincidan con los filtros.</td></tr>{% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <table class="admin-users-table">
+                <thead><tr><th>Estudiante</th><th>Matrícula</th><th>Grado</th><th>Área</th><th>Período</th><th>Evaluación</th><th>Nota</th><th>Porcentaje</th><th>Docente</th><th>Fecha</th></tr></thead>
+                <tbody>
+                    {% for registro in datos_reporte.registros %}
+                    <tr>
+                        <td>{{ registro.estudiante.nombre }} {{ registro.estudiante.apellido }}</td>
+                        <td>{{ registro.estudiante.matricula|default:'-' }}</td>
+                        <td>{{ registro.estudiante.grado }}</td>
+                        <td>{{ registro.area }}</td>
+                        <td>{{ registro.periodo }}</td>
+                        <td>{{ registro.tipo_evaluacion|default:'-' }}</td>
+                        <td>{{ registro.nota|default:'-' }}</td>
+                        <td>{{ registro.porcentaje|default:'-' }}{% if registro.porcentaje is not None %}%{% endif %}</td>
+                        <td>{% if registro.docente and registro.docente.user %}{{ registro.docente.user.get_full_name|default:registro.docente.user.username }}{% else %}-{% endif %}</td>
+                        <td>{{ registro.fecha_registro|date:'d/m/Y' }}</td>
+                    </tr>
+                    {% empty %}<tr><td colspan="10">No hay registros que coincidan con los filtros.</td></tr>{% endfor %}
+                </tbody>
+            </table>
+            {% endif %}
+        </div>
+    </section>
+    {% elif tipo_reporte == 'historico' and datos_reporte.meses %}
+    <section class="admin-card admin-card--padded" style="margin-bottom:20px;">
+        <h2 class="admin-section-title">Histórico mensual</h2>
+        <p class="admin-form-help">Registros académicos y asistencia entre {{ datos_reporte.fecha_desde|date:'d/m/Y' }} y {{ datos_reporte.fecha_hasta|date:'d/m/Y' }}.</p>
+        <div class="admin-table-wrapper">
+            <table class="admin-users-table">
+                <thead><tr><th>Mes</th><th>Registros académicos</th><th>Promedio</th><th>Asistencias</th><th>Ausencias</th><th>Tendencia</th></tr></thead>
+                <tbody>
+                    {% for mes in datos_reporte.meses %}
+                    <tr>
+                        <td>{{ mes.etiqueta }}</td><td>{{ mes.registros }}</td><td>{{ mes.promedio|floatformat:1 }}%</td><td>{{ mes.asistencias }}</td><td>{{ mes.ausencias }}</td>
+                        <td><span aria-label="{{ mes.registros }} registros académicos y {{ mes.asistencias }} asistencias" style="display:block;min-width:120px;height:10px;background:linear-gradient(to right,#176b53 {{ mes.registros_ancho }}%,#d8e2e8 {{ mes.registros_ancho }}%);border-bottom:4px solid #4078a8;"></span></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+    {% elif tipo_reporte == 'estadistico' and datos_reporte.distribucion %}
+    <section class="admin-card admin-card--padded" style="margin-bottom:20px;">
+        <h2 class="admin-section-title">Distribución estadística de calificaciones</h2>
+        <p class="admin-form-help">{{ datos_reporte.total_resultados }} calificación(es) encontradas. Cada barra representa la proporción de una nota.</p>
+        <div role="img" aria-label="Gráfico de distribución de calificaciones de A a F" style="display:grid;gap:12px;max-width:760px;">
+            {% for item in datos_reporte.distribucion %}
+            <div style="display:grid;grid-template-columns:32px minmax(80px,1fr) 48px;align-items:center;gap:12px;">
+                <strong>{{ item.etiqueta }}</strong>
+                <span style="display:block;height:16px;background:#e6edf1;border-radius:2px;overflow:hidden;"><span style="display:block;width:{{ item.ancho }}%;height:100%;background:#24745b;"></span></span>
+                <span>{{ item.cantidad }}</span>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+    {% endif %}
+
+    <section class="admin-card admin-card--padded" style="margin-bottom:20px;">
+        <h2 class="admin-section-title">Reporte diario automático</h2>
+        <p class="admin-form-help">Genera un PDF de resumen de los últimos 30 días y envíalo a los destinatarios configurados.</p>
+    <form method="post" action="{% url 'generar_reporte_sistema_ahora' %}" class="admin-form-actions">
+        {% csrf_token %}
+        <button type="submit" class="button button--success">Generar y enviar ahora</button>
+    </form>
+    </section>
+
+    <section class="admin-card admin-card--padded">
+        <h2 class="admin-section-title">Historial de reportes</h2>
+        <div class="admin-table-wrapper">
+            <table class="admin-users-table">
+                <thead>
+                    <tr><th>Fecha</th><th>Período</th><th>Casos críticos</th><th>Envíos correctos</th><th>Errores</th><th>PDF</th></tr>
+                </thead>
+                <tbody>
+                    {% for reporte in reportes %}
+                    <tr>
+                        <td>{{ reporte.fecha_reporte|date:'d/m/Y' }}</td>
+                        <td>{{ reporte.periodo_inicio|date:'d/m/Y' }} - {{ reporte.periodo_fin|date:'d/m/Y' }}</td>
+                        <td>{{ reporte.estudiantes_criticos }}</td>
+                        <td>{{ reporte.envios_ok }}</td>
+                        <td>{{ reporte.envios_error }}</td>
+                        <td><a class="button button--small" href="{% url 'descargar_reporte_sistema' reporte.pk %}">Descargar PDF</a></td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="6">Todavía no se ha generado un reporte diario.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+</div>
+{% endblock %}

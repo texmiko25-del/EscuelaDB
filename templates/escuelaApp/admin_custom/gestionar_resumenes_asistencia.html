@@ -1,0 +1,210 @@
+{% extends 'escuelaApp/base.html' %}
+{% load static %}
+
+{% block title %}Asistencia por lapso | Escuela{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/admin.css' %}?v=30">
+{% endblock %}
+
+{% block content %}
+<div class="admin-panel-container">
+    <nav class="admin-breadcrumbs">
+        <a href="{% url 'admin_panel' %}">Admin</a> › <span>Asistencia por lapso</span>
+    </nav>
+    <h1 class="admin-page-title">Resúmenes de asistencia por lapso</h1>
+    <section class="admin-actions-grid">
+        {% if request.user.empleado.cargo != 'ASISTENTE' %}
+            <a href="{% url 'admin_crear_resumen_asistencia_lapso' %}" class="button button--success">Registrar resumen</a>
+        {% endif %}
+        <a href="{% url 'admin_asistencias' %}" class="button">Ver asistencia diaria</a>
+        <form method="get" action="{% url 'admin_exportar_resumenes_asistencia_lapso_pdf' %}">
+            <input type="hidden" name="periodo" value="{{ periodo }}">
+            <input type="hidden" name="lapso" value="{{ lapso }}">
+            <input type="hidden" name="grado" value="{{ grado }}">
+            <button type="submit" class="button">Exportar grupo a PDF</button>
+        </form>
+    </section>
+
+    <form method="get" class="admin-form admin-form-grid">
+        <div class="admin-form-row">
+            <label for="grado">Grado</label>
+            <select id="grado" name="grado">
+                <option value="">Todos los grados</option>
+                {% for codigo, nombre in grados %}
+                    <option value="{{ codigo }}" {% if grado == codigo %}selected{% endif %}>{{ nombre }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="admin-form-row">
+            <label for="periodo">Período</label>
+            <select id="periodo" name="periodo">
+                <option value="">Todos los períodos</option>
+                {% for item in periodos %}
+                    <option value="{{ item }}" {% if periodo == item %}selected{% endif %}>{{ item }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="admin-form-row">
+            <label for="lapso">Lapso</label>
+            <select id="lapso" name="lapso">
+                <option value="">Todos los lapsos</option>
+                {% for codigo, nombre in lapsos %}
+                    <option value="{{ codigo }}" {% if lapso == codigo %}selected{% endif %}>{{ nombre }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="admin-form-row admin-form-row--action">
+            <button type="submit" class="button button--primary">Filtrar</button>
+        </div>
+    </form>
+
+    <div class="admin-card admin-card--padded attendance-summary-table-card">
+        <table class="admin-users-table">
+            <thead>
+                <tr>
+                    <th>Estudiante</th>
+                    <th>Período</th>
+                    <th>Lapso</th>
+                    <th>Presentes</th>
+                    <th>Ausentes</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for resumen in resumenes %}
+                <tr>
+                    <td>
+                        <strong>{{ resumen.estudiante.nombre }} {{ resumen.estudiante.apellido }}</strong>
+                        <span class="attendance-summary-student-grade">{{ resumen.estudiante.get_grado_display|default:resumen.estudiante.grado }}</span>
+                    </td>
+                    <td>{{ resumen.periodo }}</td>
+                    <td>{{ resumen.get_lapso_display }}</td>
+                    <td>{{ resumen.presentes }}</td>
+                    <td>{{ resumen.ausentes }}</td>
+                    <td>
+                        <div class="admin-actions-inline">
+                            <button
+                                type="button"
+                                class="button admin-icon-action attendance-summary-view"
+                                title="Ver información completa"
+                                aria-label="Ver resumen completo de asistencia de {{ resumen.estudiante.nombre }} {{ resumen.estudiante.apellido }}"
+                                data-student="{{ resumen.estudiante.nombre }} {{ resumen.estudiante.apellido }}"
+                                data-cedula="{{ resumen.estudiante.cedula }}"
+                                data-grado="{{ resumen.estudiante.get_grado_display|default:resumen.estudiante.grado }}"
+                                data-periodo="{{ resumen.periodo }}"
+                                data-lapso="{{ resumen.get_lapso_display }}"
+                                data-presentes="{{ resumen.presentes }}"
+                                data-ausentes="{{ resumen.ausentes }}"
+                                data-tardanzas="{{ resumen.tardanzas }}"
+                                data-justificadas="{{ resumen.justificadas }}"
+                                data-observaciones="{{ resumen.observaciones|default:'Sin observaciones' }}"
+                                data-seguimiento="{{ resumen.seguimiento|default:'Sin seguimiento adicional' }}"
+                                data-actualizado="{{ resumen.fecha_registro|date:'d/m/Y H:i' }}"
+                                data-registrado-por="{{ resumen.registrado_por|default:'Sistema' }}"
+                            >
+                                <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"/><circle cx="12" cy="12" r="2.5"/></svg>
+                            </button>
+                            <a href="{% url 'admin_exportar_resumenes_asistencia_lapso_pdf' %}?estudiante={{ resumen.estudiante.cedula|urlencode }}" class="button admin-icon-action" title="Descargar reporte del estudiante en PDF" aria-label="Descargar reporte de asistencia por lapso en PDF de {{ resumen.estudiante.nombre }} {{ resumen.estudiante.apellido }}">
+                                <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3h10l4 4v14H5z"/><path d="M14 3v5h5M8 12h8M8 16h5"/></svg>
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="6">Aún no hay resúmenes de asistencia registrados.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="attendance-summary-modal" id="attendanceSummaryModal" aria-hidden="true">
+    <section class="attendance-summary-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="attendanceSummaryTitle" tabindex="-1">
+        <p class="student-record-modal__eyebrow">Detalle de asistencia</p>
+        <h2 id="attendanceSummaryTitle">Resumen del estudiante</h2>
+        <div class="attendance-summary-modal__identity">
+            <h3 id="attendanceSummaryStudent"></h3>
+            <p><strong>Cédula:</strong> <span id="attendanceSummaryCedula"></span><span aria-hidden="true"> · </span><strong>Grado:</strong> <span id="attendanceSummaryGrado"></span></p>
+        </div>
+        <dl class="attendance-summary-modal__details">
+            <div><dt>Período escolar</dt><dd id="attendanceSummaryPeriodo"></dd></div>
+            <div><dt>Lapso</dt><dd id="attendanceSummaryLapso"></dd></div>
+            <div><dt>Días presentes</dt><dd id="attendanceSummaryPresentes"></dd></div>
+            <div><dt>Ausencias</dt><dd id="attendanceSummaryAusentes"></dd></div>
+            <div><dt>Tardanzas</dt><dd id="attendanceSummaryTardanzas"></dd></div>
+            <div><dt>Justificadas</dt><dd id="attendanceSummaryJustificadas"></dd></div>
+            <div><dt>Última actualización</dt><dd id="attendanceSummaryActualizado"></dd></div>
+            <div><dt>Registrado por</dt><dd id="attendanceSummaryRegistradoPor"></dd></div>
+            <div class="attendance-summary-modal__full"><dt>Observaciones</dt><dd id="attendanceSummaryObservaciones"></dd></div>
+            <div class="attendance-summary-modal__full"><dt>Seguimiento</dt><dd id="attendanceSummarySeguimiento"></dd></div>
+        </dl>
+        <div class="student-record-modal__actions">
+            <button type="button" class="button button--primary" id="closeAttendanceSummary">Cerrar</button>
+        </div>
+    </section>
+</div>
+
+<script>
+    (function () {
+        const modal = document.getElementById('attendanceSummaryModal');
+        const dialog = modal.querySelector('[role="dialog"]');
+        const closeButton = document.getElementById('closeAttendanceSummary');
+        const fields = {
+            student: document.getElementById('attendanceSummaryStudent'),
+            cedula: document.getElementById('attendanceSummaryCedula'),
+            grado: document.getElementById('attendanceSummaryGrado'),
+            periodo: document.getElementById('attendanceSummaryPeriodo'),
+            lapso: document.getElementById('attendanceSummaryLapso'),
+            presentes: document.getElementById('attendanceSummaryPresentes'),
+            ausentes: document.getElementById('attendanceSummaryAusentes'),
+            tardanzas: document.getElementById('attendanceSummaryTardanzas'),
+            justificadas: document.getElementById('attendanceSummaryJustificadas'),
+            actualizado: document.getElementById('attendanceSummaryActualizado'),
+            registradoPor: document.getElementById('attendanceSummaryRegistradoPor'),
+            observaciones: document.getElementById('attendanceSummaryObservaciones'),
+            seguimiento: document.getElementById('attendanceSummarySeguimiento'),
+        };
+        let lastTrigger = null;
+
+        document.querySelectorAll('.attendance-summary-view').forEach((button) => {
+            button.addEventListener('click', () => {
+                const data = button.dataset;
+                fields.student.textContent = data.student;
+                fields.cedula.textContent = data.cedula;
+                fields.grado.textContent = data.grado;
+                fields.periodo.textContent = data.periodo;
+                fields.lapso.textContent = data.lapso;
+                fields.presentes.textContent = data.presentes;
+                fields.ausentes.textContent = data.ausentes;
+                fields.tardanzas.textContent = data.tardanzas;
+                fields.justificadas.textContent = data.justificadas;
+                fields.actualizado.textContent = data.actualizado;
+                fields.registradoPor.textContent = data.registradoPor;
+                fields.observaciones.textContent = data.observaciones;
+                fields.seguimiento.textContent = data.seguimiento;
+                lastTrigger = button;
+                modal.classList.add('is-open');
+                modal.setAttribute('aria-hidden', 'false');
+                closeButton.focus();
+            });
+        });
+
+        closeButton.addEventListener('click', () => {
+            modal.classList.remove('is-open');
+            modal.setAttribute('aria-hidden', 'true');
+            if (lastTrigger) lastTrigger.focus();
+        });
+
+        dialog.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape') {
+                event.preventDefault();
+                event.stopPropagation();
+            } else if (event.key === 'Tab') {
+                event.preventDefault();
+                closeButton.focus();
+            }
+        });
+    })();
+</script>
+{% endblock %}

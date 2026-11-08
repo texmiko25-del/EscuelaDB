@@ -1,0 +1,88 @@
+{% extends 'escuelaApp/base.html' %}
+{% load static %}
+
+{% block title %}Gestión de Personal | Escuela{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/admin.css' %}?v=11">
+{% endblock %}
+
+{% block content %}
+    <div class="admin-panel-container">
+        <nav class="admin-breadcrumbs">
+            <a href="{% url 'home' %}">Inicio</a> › <a href="{% url 'admin_panel' %}">Admin</a> › <span>Personal</span>
+        </nav>
+        <h1 class="admin-page-title">Gestión de Personal</h1>
+
+        <section class="admin-actions-grid">
+            <a href="{% url 'admin_crear_empleado' %}" class="button button--success">Crear Empleado</a>
+            <a href="{% url 'admin_estudiantes' %}" class="button">Estudiantes</a>
+            <a href="{% url 'admin_docentes' %}" class="button">Docentes</a>
+            <a href="{% url 'admin_representantes' %}" class="button">Representantes</a>
+        </section>
+
+        <form method="get" class="admin-form">
+            <div class="admin-form-row">
+                <label for="q">Buscar por nombre o cédula</label>
+                <input id="q" type="text" name="q" value="{{ query }}" placeholder="Nombre, apellido o cédula">
+            </div>
+            <div class="admin-form-row">
+                <label for="cargo">Filtrar por cargo</label>
+                <select id="cargo" name="cargo">
+                    <option value="">Todos</option>
+                    {% for key, label in cargos %}
+                        <option value="{{ key }}" {% if cargo == key %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <button type="submit" class="button">Filtrar</button>
+        </form>
+
+        <table class="admin-users-table">
+            <thead>
+                <tr>
+                    <th>Nombre</th>
+                    <th>Cédula</th>
+                    <th>Cargo</th>
+                    <th>Correo</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for empleado in empleados %}
+                    <tr>
+                        <td>{{ empleado.user.first_name }} {{ empleado.user.last_name }}</td>
+                        <td>{{ empleado.cedula }}</td>
+                        <td>{{ empleado.get_cargo_display }}</td>
+                        <td>{{ empleado.user.email|default:'No especificado' }}</td>
+                        <td>
+                            <div class="admin-actions-inline">
+                                <a href="{% url 'admin_editar_empleado' empleado.cedula %}" class="button admin-icon-action" title="Editar empleado" aria-label="Editar empleado {{ empleado.user.first_name }} {{ empleado.user.last_name }}">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L8 18l-4 1 1-4Z"/></svg>
+                                </a>
+                                <form method="post" action="{% url 'admin_eliminar_empleado' empleado.cedula %}" class="inline-form">
+                                    {% csrf_token %}
+                                    <button type="submit" class="button button--danger admin-icon-action" title="Eliminar empleado" aria-label="Eliminar empleado {{ empleado.user.first_name }} {{ empleado.user.last_name }}">
+                                        <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v5M14 11v5"/></svg>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="5">No se encontraron empleados.</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        {% if page_obj.paginator.num_pages > 1 %}
+            <nav class="admin-pagination" aria-label="Paginación final de empleados">
+                {% if page_obj.has_previous %}<a class="button" href="?page={{ page_obj.previous_page_number }}{% if query %}&q={{ query|urlencode }}{% endif %}{% if cargo %}&cargo={{ cargo|urlencode }}{% endif %}">Anterior</a>{% endif %}
+                <span>Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span>
+                {% if page_obj.has_next %}<a class="button" href="?page={{ page_obj.next_page_number }}{% if query %}&q={{ query|urlencode }}{% endif %}{% if cargo %}&cargo={{ cargo|urlencode }}{% endif %}">Siguiente</a>{% endif %}
+            </nav>
+        {% endif %}
+    </div>
+{% endblock %}

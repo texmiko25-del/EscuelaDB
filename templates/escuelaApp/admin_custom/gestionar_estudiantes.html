@@ -1,0 +1,287 @@
+{% extends 'escuelaApp/base.html' %}
+{% load static %}
+
+{% block title %}Gestión de Estudiantes | Escuela{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/admin.css' %}?v=12">
+{% endblock %}
+
+{% block content %}
+    <div class="admin-panel-container">
+        <nav class="admin-breadcrumbs">
+            <a href="{% url 'home' %}">Inicio</a> › <a href="{% url 'admin_panel' %}">Admin</a> › <span>Estudiantes</span>
+        </nav>
+        <h1 class="admin-page-title">Gestión de Estudiantes</h1>
+
+
+        <form method="get" class="admin-form registry-search-form" data-registry-search data-results-key="estudiantes" data-results-url="{% url 'admin_estudiantes' %}">
+            <div class="admin-form-row registry-search-form__field">
+                <label for="q">Buscar estudiante</label>
+                <div class="registry-search-form__input-wrap">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"></circle><path d="m16 16 4.5 4.5"></path></svg>
+                    <input id="q" type="search" name="q" value="{{ query }}" placeholder="Nombre, cédula, grado o sección" autocomplete="off">
+                </div>
+                <small class="admin-form-hint">Busca por nombre, cédula, grado o sección. Los resultados y el representante se actualizan mientras escribes.</small>
+            </div>
+        </form>
+
+        <section id="filter-results" aria-live="polite" {% if not query %}hidden{% endif %}>
+                <h2 id="filter-results-title">Resultados para «{{ query }}» ({{ total_en_lista }})</h2>
+                <table class="admin-users-table">
+                    <thead>
+                        <tr><th>Nombre</th><th>Cédula escolar</th><th>Matrícula</th><th>Grado</th><th>Representante</th></tr>
+                    </thead>
+                    <tbody id="filter-results-body" data-search-fields="nombre,cedula,matricula,grado_seccion,representante" data-empty-message="No se encontraron estudiantes.">
+                        {% for estudiante in estudiantes %}
+                            <tr>
+                                <td>{{ estudiante.nombre }} {{ estudiante.apellido }}</td>
+                                <td>{{ estudiante.cedula }}</td>
+                                <td>{{ estudiante.matricula|default:'No asignada' }}</td>
+                                <td>{{ estudiante.grado }} - {{ estudiante.seccion|default:'Sin sección' }}</td>
+                                <td>{{ estudiante.representante|default:'Sin representante' }}</td>
+                            </tr>
+                        {% empty %}
+                            <tr><td colspan="5">No se encontraron estudiantes.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% if page_obj.paginator.num_pages > 1 %}
+                    <nav class="admin-pagination" aria-label="Paginación de resultados de estudiantes">
+                        {% if page_obj.has_previous %}<a class="button" href="?page={{ page_obj.previous_page_number }}&q={{ query|urlencode }}">Anterior</a>{% endif %}
+                        <span>Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span>
+                        {% if page_obj.has_next %}<a class="button" href="?page={{ page_obj.next_page_number }}&q={{ query|urlencode }}">Siguiente</a>{% endif %}
+                    </nav>
+                {% endif %}
+        </section>
+
+        <form method="get" action="{% url 'admin_exportar_estudiantes_pdf' %}" class="admin-form admin-form-grid" style="margin: 1.5rem 0;">
+            <div class="admin-form-row">
+                <label for="periodo">Año escolar</label>
+                <select id="periodo" name="periodo">
+                    <option value="">Todos los años escolares</option>
+                    {% for item in periodos_disponibles %}
+                        <option value="{{ item }}">{{ item }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="admin-form-row">
+                <label for="desde_grado">Desde el grado</label>
+                <select id="desde_grado" name="desde_grado">
+                    {% for codigo, nombre in grados_disponibles %}
+                        <option value="{{ codigo }}" {% if forloop.first %}selected{% endif %}>{{ nombre }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="admin-form-row">
+                <label for="hasta_grado">Hasta el grado</label>
+                <select id="hasta_grado" name="hasta_grado">
+                    {% for codigo, nombre in grados_disponibles %}
+                        <option value="{{ codigo }}" {% if forloop.last %}selected{% endif %}>{{ nombre }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="admin-form-row admin-form-row--action">
+                <button type="submit" class="button button--primary">Exportar lista en PDF</button>
+            </div>
+        </form>
+
+        <div class="admin-summary-grid registry-summary" aria-label="Resumen de estudiantes">
+            <div class="admin-summary-card admin-summary-card--blue">
+                <span>Registrados en el sistema</span>
+                <strong>{{ total_registrados }}</strong>
+                <p>Total de estudiantes registrados.</p>
+            </div>
+            <div class="admin-summary-card admin-summary-card--green">
+                <span>Coincidencias en la lista</span>
+                <strong data-registry-match-count>{{ total_en_lista }}</strong>
+                <p><span data-registry-match-percent>{{ porcentaje_en_lista }}</span>% del total registrado</p>
+                <div class="registry-count-track" role="img" data-registry-match-track data-total="{{ total_registrados }}" aria-label="{{ porcentaje_en_lista }} por ciento del total">
+                    <span style="width: {{ porcentaje_en_lista }}%;"></span>
+                </div>
+            </div>
+        </div>
+
+        <section class="admin-actions-grid mt-4">
+            {% if request.user.empleado.cargo != 'ASISTENTE' %}
+                <a href="{% url 'admin_crear_estudiante' %}" class="button button--success">Crear Estudiante</a>
+            {% endif %}
+            {% if request.user.empleado.cargo == 'DIRECTORA' or request.user.empleado.cargo == 'SUBDIRECTORA' %}
+                <a href="{% url 'admin_representantes' %}" class="button">Representantes</a>
+            {% endif %}
+            {% if request.user.empleado.cargo != 'ASISTENTE' %}
+                <a href="{% url 'admin_docentes' %}" class="button">Docentes</a>
+            {% endif %}
+        </section>
+
+        <div id="student-default-list" {% if query %}hidden{% endif %}>
+        <table class="admin-users-table">
+            <thead>
+                <tr>
+                    <th>Nombre</th>
+                    <th>Cédula escolar</th>
+                    <th>Matrícula</th>
+                    <th>Grado</th>
+                    <th>Representante</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for estudiante in estudiantes %}
+                    <tr>
+                        <td>{{ estudiante.nombre }} {{ estudiante.apellido }}</td>
+                        <td>{{ estudiante.cedula }}</td>
+                        <td>{{ estudiante.matricula|default:'No asignada' }}</td>
+                        <td>{{ estudiante.grado }} - {{ estudiante.seccion|default:'Sin sección' }}</td>
+                        <td>{{ estudiante.representante|default:'Sin representante' }}</td>
+                        <td>
+                            <div class="admin-actions-inline">
+                                <button type="button" class="button admin-icon-action js-open-expediente" title="Ver expediente" aria-label="Ver expediente de {{ estudiante.nombre }} {{ estudiante.apellido }}" data-url="{% if estudiante.cedula %}{% url 'admin_expediente_estudiante' estudiante.cedula %}{% else %}{% url 'admin_expediente_estudiante_por_id' estudiante.pk %}{% endif %}?format=json">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"/><circle cx="12" cy="12" r="2.5"/></svg>
+                                </button>
+                                <a href="{% url 'admin_exportar_registros_academicos_pdf' %}?estudiante={{ estudiante.cedula|urlencode }}" class="button admin-icon-action" title="Descargar notas en PDF" aria-label="Descargar notas en PDF de {{ estudiante.nombre }} {{ estudiante.apellido }}">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3h10l4 4v14H5z"/><path d="M14 3v5h5M8 12h8M8 16h5"/></svg>
+                                </a>
+                                <a href="{% url 'admin_exportar_asistencias_pdf' %}?estudiante={{ estudiante.cedula|urlencode }}" class="button admin-icon-action" title="Descargar asistencia en PDF" aria-label="Descargar asistencia en PDF de {{ estudiante.nombre }} {{ estudiante.apellido }}">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3h8l4 4v14H4V3h4Z"/><path d="M14 3v5h6M8 13l2.5 2.5L16 10"/></svg>
+                                </a>
+                                {% if request.user.empleado.cargo != 'ASISTENTE' %}
+                                <a href="{% if estudiante.cedula %}{% url 'admin_editar_estudiante' estudiante.cedula %}{% else %}{% url 'admin_editar_estudiante_por_id' estudiante.pk %}{% endif %}" class="button admin-icon-action" title="Editar estudiante" aria-label="Editar estudiante {{ estudiante.nombre }} {{ estudiante.apellido }}">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L8 18l-4 1 1-4Z"/></svg>
+                                </a>
+                                <form method="post" action="{% if estudiante.cedula %}{% url 'admin_eliminar_estudiante' estudiante.cedula %}{% else %}{% url 'admin_eliminar_estudiante_por_id' estudiante.pk %}{% endif %}" class="inline-form">
+                                    {% csrf_token %}
+                                    <button type="submit" class="button button--danger admin-icon-action" title="Eliminar estudiante" aria-label="Eliminar estudiante {{ estudiante.nombre }} {{ estudiante.apellido }}">
+                                        <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v5M14 11v5"/></svg>
+                                    </button>
+                                </form>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="6">No se encontraron estudiantes.</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% if page_obj.paginator.num_pages > 1 %}
+            <nav class="admin-pagination" aria-label="Paginación de estudiantes">
+                {% if page_obj.has_previous %}<a class="button" href="?page={{ page_obj.previous_page_number }}">Anterior</a>{% endif %}
+                <span>Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span>
+                {% if page_obj.has_next %}<a class="button" href="?page={{ page_obj.next_page_number }}">Siguiente</a>{% endif %}
+            </nav>
+        {% endif %}
+        </div>
+    </div>
+
+    <div class="student-record-modal" id="studentRecordModal" aria-hidden="true">
+        <div class="student-record-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="studentRecordTitle">
+            <div class="student-record-modal__header">
+                <div>
+                    <p class="student-record-modal__eyebrow">Expediente escolar</p>
+                    <h2 id="studentRecordTitle">Datos del estudiante</h2>
+                </div>
+            </div>
+            <div id="studentRecordContent" class="student-record-modal__content"></div>
+            <div class="student-record-modal__actions">
+                <button type="button" class="button button--secondary" id="closeStudentRecord">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="{% static 'js/registry_search.js' %}?v=1" defer></script>
+
+    <script>
+        (function () {
+            const modal = document.getElementById('studentRecordModal');
+            const content = document.getElementById('studentRecordContent');
+            const closeButton = document.getElementById('closeStudentRecord');
+
+            function createText(tag, text, className) {
+                const element = document.createElement(tag);
+                element.textContent = text;
+                if (className) element.className = className;
+                return element;
+            }
+
+            function renderRecord(record) {
+                content.replaceChildren();
+                const identity = document.createElement('div');
+                identity.className = 'student-record-modal__identity';
+                identity.append(
+                    createText('h3', record.nombre),
+                    createText('p', 'Cédula escolar: ' + record.cedula + ' | Matrícula: ' + record.matricula)
+                );
+                content.append(identity);
+
+                const details = document.createElement('div');
+                details.className = 'student-record-modal__details';
+                [
+                    ['Fecha de nacimiento', record.fecha_nacimiento],
+                    ['Edad', record.edad],
+                    ['Sexo', record.sexo],
+                    ['Nacionalidad', record.nacionalidad],
+                    ['Grado', record.grado],
+                    ['Sección', record.seccion],
+                    ['Teléfono', record.telefono],
+                    ['Ubicación', record.ubicacion],
+                    ['Representante', record.representante],
+                ].forEach(([label, value]) => {
+                    const item = document.createElement('p');
+                    item.append(createText('strong', label + ': '), createText('span', value));
+                    details.append(item);
+                });
+                content.append(details);
+
+                const notesSection = document.createElement('section');
+                notesSection.append(createText('h3', 'Notas académicas'));
+                const notesTable = document.createElement('table');
+                notesTable.className = 'admin-users-table';
+                notesTable.innerHTML = '<thead><tr><th>Área</th><th>Período</th><th>Evaluación</th><th>Nota</th><th>Porcentaje</th><th>Estado</th></tr></thead><tbody></tbody>';
+                const notesBody = notesTable.querySelector('tbody');
+                (record.notas.length ? record.notas : [{area: 'No hay notas registradas.', periodo: '', evaluacion: '', nota: '', estado: ''}]).forEach((nota) => {
+                    const row = document.createElement('tr');
+                    [nota.area, nota.periodo, nota.evaluacion, nota.nota, `${nota.porcentaje}%`, nota.estado].forEach((value) => row.append(createText('td', value)));
+                    notesBody.append(row);
+                });
+                notesSection.append(notesTable);
+                content.append(notesSection);
+
+                const attendanceSection = document.createElement('section');
+                attendanceSection.append(createText('h3', 'Asistencia'));
+                const attendanceTable = document.createElement('table');
+                attendanceTable.className = 'admin-users-table';
+                attendanceTable.innerHTML = '<thead><tr><th>Fecha</th><th>Estado</th><th>Observaciones</th></tr></thead><tbody></tbody>';
+                const attendanceBody = attendanceTable.querySelector('tbody');
+                (record.asistencias.length ? record.asistencias : [{fecha: 'No hay asistencias registradas.', estado: '', observaciones: ''}]).forEach((asistencia) => {
+                    const row = document.createElement('tr');
+                    [asistencia.fecha, asistencia.estado, asistencia.observaciones].forEach((value) => row.append(createText('td', value)));
+                    attendanceBody.append(row);
+                });
+                attendanceSection.append(attendanceTable);
+                content.append(attendanceSection);
+            }
+
+            document.querySelectorAll('.js-open-expediente').forEach((button) => {
+                button.addEventListener('click', async () => {
+                    content.textContent = 'Cargando expediente...';
+                    modal.classList.add('is-open');
+                    modal.setAttribute('aria-hidden', 'false');
+                    const response = await fetch(button.dataset.url);
+                    if (!response.ok) {
+                        content.textContent = 'No se pudo cargar el expediente.';
+                        return;
+                    }
+                    renderRecord(await response.json());
+                });
+            });
+
+            closeButton.addEventListener('click', () => {
+                modal.classList.remove('is-open');
+                modal.setAttribute('aria-hidden', 'true');
+            });
+        })();
+    </script>
+{% endblock %}

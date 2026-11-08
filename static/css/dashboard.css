@@ -1,0 +1,96 @@
+.dashboard-summary {
+    display: grid;
+    gap: 1rem;
+}
+.dashboard-card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+.dashboard-schedule-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1rem;
+}
+.dashboard-card {
+    background: #ffffff;
+    border: 1px solid rgba(148, 163, 184, 0.16);
+    border-radius: 24px;
+    padding: 1.35rem 1.4rem;
+    box-shadow: 0 18px 40px rgba(15, 23, 42, 0.06);
+}
+.dashboard-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 24px 52px rgba(15, 23, 42, 0.1);
+}
+.dashboard-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: start;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+.dashboard-card-header h1,
+.dashboard-card-header h2 {
+    margin: 0;
+    color: #102a43;
+}
+.dashboard-card-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.35rem 0.8rem;
+    border-radius: 999px;
+    background: #eff6ff;
+    color: #1d4ed8;
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+.dashboard-card-text {
+    margin: 0 0 1rem;
+    line-height: 1.7;
+    color: #475569;
+}
+.dashboard-card-items {
+    display: grid;
+    gap: 0.75rem;
+}
+.dashboard-card-item {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.95rem 1rem;
+    border-radius: 16px;
+    background: #f8fafc;
+    border: 1px solid rgba(203, 213, 225, 0.6);
+}
+.dashboard-card-item-label {
+    color: #64748b;
+    font-size: 0.82rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+.dashboard-action-button {
+    margin-top: 1rem;
+    display: inline-flex;
+    align-items: center;
+}
+.dashboard-card--stat {
+    background: linear-gradient(180deg, #eff6ff 0%, #ffffff 100%);
+    border-color: rgba(37, 99, 235, 0.22);
+}
+.dashboard-card--schedule h2 {
+    margin: 0 0 0.75rem;
+    font-size: 1.05rem;
+}
+.dashboard-card--schedule p {
+    margin: 0.35rem 0;
+    color: #334e68;
+}
+.dashboard-card--empty {
+    text-align: center;
+    color: #64748b;
+    background: #f8fafc;
+    border-color: rgba(203, 213, 225, 0.6);
+}

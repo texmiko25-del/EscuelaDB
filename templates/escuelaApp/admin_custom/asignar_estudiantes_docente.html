@@ -1,0 +1,85 @@
+{% extends 'escuelaApp/base.html' %}
+{% load static %}
+
+{% block title %}Asignar estudiantes | Escuela{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/admin.css' %}">
+{% endblock %}
+
+{% block content %}
+    <div class="admin-panel-container">
+        <nav class="admin-breadcrumbs">
+            <a href="{% url 'home' %}">Inicio</a> ›
+            <a href="{% url 'admin_panel' %}">Admin</a> ›
+            <a href="{% url 'admin_docentes' %}">Profesores</a> ›
+            <span>Asignar estudiantes</span>
+        </nav>
+
+        <section class="admin-card">
+            <div class="admin-card-header">
+                <h1 class="admin-page-title">Asignar grado y estudiantes</h1>
+            </div>
+            <div class="admin-card-body">
+                <p class="admin-card-metric">
+                    Profesor/a: <strong>{{ docente.nombre }} {{ docente.apellido }}</strong>
+                </p>
+                <p class="admin-form-help">
+                    Elige el grado y la sección para filtrar los estudiantes. Guardar
+                    reemplaza únicamente la selección de ese grupo.
+                </p>
+
+                <form method="get" class="admin-form">
+                    <div class="admin-form-row">
+                        <label for="{{ form.grado.id_for_label }}">Grado</label>
+                        {{ form.grado }}
+                        {{ form.grado.errors }}
+                    </div>
+                    <div class="admin-form-row">
+                        <label for="{{ form.seccion.id_for_label }}">Sección</label>
+                        {{ form.seccion }}
+                        {{ form.seccion.errors }}
+                    </div>
+                    <div class="admin-form-actions">
+                        <button type="submit" class="button">Ver estudiantes</button>
+                    </div>
+                </form>
+
+                <form method="post" class="admin-form">
+                    {% csrf_token %}
+                    {{ form.non_field_errors }}
+                    <input type="hidden" name="grado" value="{{ grado_actual }}">
+                    <input type="hidden" name="seccion" value="{{ seccion_actual }}">
+                    <div class="admin-form-row">
+                        <label for="{{ form.estudiantes.id_for_label }}">
+                            Estudiantes del grupo seleccionado
+                        </label>
+                        <small class="admin-form-help">
+                            Selecciona a cada estudiante de este grado y sección que estará a cargo del docente.
+                            Puedes asignar estudiantes individualmente o incluir al grupo completo
+                            ({{ total_estudiantes_grupo }} estudiantes).
+                        </small>
+                        {% if hay_estudiantes %}
+                            {{ form.estudiantes }}
+                        {% else %}
+                            <p class="admin-form-help">
+                                No hay estudiantes registrados con este grado y sección.
+                                Registra o edita sus fichas en Estudiantes y asígnales esta sección.
+                            </p>
+                        {% endif %}
+                        {{ form.estudiantes.errors }}
+                    </div>
+                    <div class="admin-form-actions">
+                        <button type="submit" class="button button--success">Guardar asignación</button>
+                        {% if hay_estudiantes %}
+                            <button type="submit" name="asignar_grupo_completo" value="1" class="button button--primary">
+                                Asignar todo el grupo
+                            </button>
+                        {% endif %}
+                        <a href="{% url 'admin_docentes' %}" class="button button--secondary">Volver a Profesores</a>
+                    </div>
+                </form>
+            </div>
+        </section>
+    </div>
+{% endblock %}
